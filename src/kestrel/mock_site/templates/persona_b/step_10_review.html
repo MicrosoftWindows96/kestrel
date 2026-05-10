@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Review your details{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/review"
+      class="legacy-form"
+      data-test-step="review">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Review your details</h1>
+  <p>Read through the summary and confirm to see your quote.</p>
+  <div class="submit-row">
+    <input type="submit" value="Get your price" data-test-submit>
+  </div>
+</form>
+{% endblock %}

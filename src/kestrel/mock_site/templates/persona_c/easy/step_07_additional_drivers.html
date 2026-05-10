@@ -1,0 +1,14 @@
+<form data-test-step="additional-drivers" class="minimal" method="post" action="/quote/{{ sid }}/additional-drivers">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <label>How many additional drivers?
+    <select name="additional_driver_count" data-test-field-additional_driver_count>
+      <option value="0">0</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+    {% if errors.additional_driver_count %}<span data-tooltip-error data-test-error-additional_driver_count>{{ errors.additional_driver_count }}</span>{% endif %}
+  </label>
+  <button data-test-submit type="submit">Continue</button>
+</form>

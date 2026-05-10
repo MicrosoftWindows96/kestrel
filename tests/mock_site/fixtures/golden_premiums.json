@@ -1,0 +1,27 @@
+{
+  "s1": {
+    "persona_a": "2805.04",
+    "persona_b": "2962.40",
+    "persona_c": "3166.24"
+  },
+  "s2": {
+    "persona_a": "2342.48",
+    "persona_b": "2499.84",
+    "persona_c": "2703.68"
+  },
+  "s3": {
+    "persona_a": "422.80",
+    "persona_b": "580.16",
+    "persona_c": "784.00"
+  },
+  "s4": {
+    "persona_a": "845.04",
+    "persona_b": "1002.40",
+    "persona_c": "1206.24"
+  },
+  "s5": {
+    "persona_a": "662.48",
+    "persona_b": "819.84",
+    "persona_c": "1023.68"
+  }
+}

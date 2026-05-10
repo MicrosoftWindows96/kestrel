@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Your price{% endblock %}
+{% block content %}
+<section class="legacy-form">
+  <h1>Your price</h1>
+  <dl data-test-quote-breakdown>
+    <dt>Total</dt>
+    <dd class="premium-total-row" data-test-quote-total>{{ premium_total or '' }}</dd>
+    {% for addon in addons|default([]) %}
+    <dt>{{ addon.label|default(addon.name) }}</dt>
+    <dd data-test-quote-addon-{{ addon.name }}>{{ addon.price|default('') }}</dd>
+    {% endfor %}
+  </dl>
+</section>
+{% endblock %}

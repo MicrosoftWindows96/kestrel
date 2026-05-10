@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Main driver{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/driver-1"
+      class="aggregator-form"
+      data-test-step="driver-1">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Main driver</legend>
+    <div class="row">
+      <label for="driver-1-forename">Forename</label>
+      <input id="driver-1-forename"
+             name="driver_1_forename"
+             type="text"
+             data-test-field-driver_1_forename>
+      <span class="field-error" data-test-error-driver_1_forename></span>
+    </div>
+    <div class="row">
+      <label for="driver-1-surname">Surname</label>
+      <input id="driver-1-surname"
+             name="driver_1_surname"
+             type="text"
+             data-test-field-driver_1_surname>
+      <span class="field-error" data-test-error-driver_1_surname></span>
+    </div>
+    <div class="row">
+      <label for="driver-1-dob">Date of birth</label>
+      <input id="driver-1-dob"
+             name="driver_1_dob"
+             type="text"
+             placeholder="YYYY-MM-DD"
+             data-test-field-driver_1_dob>
+      <span class="field-error" data-test-error-driver_1_dob></span>
+    </div>
+    <div class="row">
+      <label for="driver-1-licence-type">Licence type</label>
+      <select id="driver-1-licence-type"
+              name="driver_1_licence_type"
+              data-test-field-driver_1_licence_type>
+        <option value=""></option>
+        <option value="full_uk">Full UK</option>
+        <option value="provisional_uk">Provisional UK</option>
+        <option value="full_eu">Full EU</option>
+        <option value="other">Other</option>
+      </select>
+      <span class="field-error" data-test-error-driver_1_licence_type></span>
+    </div>
+    <div class="row">
+      <label for="driver-1-licence-held-since">Licence held since</label>
+      <input id="driver-1-licence-held-since"
+             name="driver_1_licence_held_since"
+             type="text"
+             placeholder="YYYY-MM-DD"
+             data-test-field-driver_1_licence_held_since>
+      <span class="field-error" data-test-error-driver_1_licence_held_since></span>
+    </div>
+    <div class="row">
+      <label for="driver-1-occupation">Occupation</label>
+      <input id="driver-1-occupation"
+             name="driver_1_occupation"
+             type="text"
+             data-test-field-driver_1_occupation>
+      <span class="field-error" data-test-error-driver_1_occupation></span>
+    </div>
+    <div class="row">
+      <label for="driver-1-employment">Employment</label>
+      <select id="driver-1-employment"
+              name="driver_1_employment"
+              data-test-field-driver_1_employment>
+        <option value=""></option>
+        <option value="employed">Employed</option>
+        <option value="self_employed">Self employed</option>
+        <option value="unemployed">Unemployed</option>
+        <option value="retired">Retired</option>
+        <option value="student">Student</option>
+      </select>
+      <span class="field-error" data-test-error-driver_1_employment></span>
+    </div>
+  </fieldset>
+  <button data-test-submit>Continue</button>
+</form>
+{% endblock %}

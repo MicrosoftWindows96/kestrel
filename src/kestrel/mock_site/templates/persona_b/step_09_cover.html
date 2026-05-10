@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Choose your cover{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/cover"
+      class="legacy-form"
+      data-test-step="cover">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Choose your cover</h1>
+  <div class="field-row">
+    <label>Cover level</label>
+    {% set fid = field_ids.get('cover_type', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="cover_type"
+            data-test-field-cover_type>
+      <option value=""></option>
+      <option value="fully_comp">Fully comprehensive</option>
+      <option value="third_party_fire_theft">Third party, fire and theft</option>
+      <option value="third_party_only">Third party only</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <label>Voluntary excess</label>
+    {% set fid = field_ids.get('voluntary_excess', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="voluntary_excess" type="text"
+           value="{{ field_values.voluntary_excess or '' }}"
+           data-test-field-voluntary_excess>
+  </div>
+  <div class="field-row">
+    <label>Years no claims</label>
+    {% set fid = field_ids.get('ncb_years', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="ncb_years" type="text"
+           value="{{ field_values.ncb_years or '' }}"
+           data-test-field-ncb_years>
+  </div>
+  <div class="field-row">
+    <label>Protect no claims</label>
+    {% set fid = field_ids.get('ncb_protection', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="ncb_protection"
+            data-test-field-ncb_protection>
+      <option value="false">No</option>
+      <option value="true">Yes</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <label>Optional extras</label>
+    {% set fid = field_ids.get('addons', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="addons" multiple
+            data-test-field-addons>
+      <option value="breakdown">Breakdown rescue</option>
+      <option value="legal_cover">Legal cover</option>
+      <option value="windscreen">Windscreen cover</option>
+    </select>
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

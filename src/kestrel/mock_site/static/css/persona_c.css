@@ -1,0 +1,63 @@
+/* persona_c styling: minimal, system-font, single-column form. Tooltip
+   error spans surface inline next to the offending field. Class names
+   track plan section 25 axes so tests can assert presence without
+   binding to copy. */
+
+.minimal {
+  font-family: system-ui, sans-serif;
+  max-width: 36rem;
+  margin: 1rem auto;
+  padding: 1rem;
+  color: #222;
+}
+
+.minimal label {
+  display: block;
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.minimal input,
+.minimal select,
+.minimal textarea {
+  display: block;
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid #aaa;
+  background: #fff;
+}
+
+.minimal [data-tooltip-error] {
+  display: inline-block;
+  background: #fee;
+  color: #5b0a14;
+  padding: 0.25rem 0.5rem;
+  margin-top: 0.25rem;
+  border-radius: 2px;
+  font-size: 0.85rem;
+}
+
+.minimal button[data-test-submit] {
+  background: #2c5f2d;
+  color: #fff;
+  border: 0;
+  padding: 0.5rem 1.5rem;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.minimal [data-test-quote-total] {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.challenge-shell {
+  font-family: system-ui, sans-serif;
+  max-width: 30rem;
+  margin: 3rem auto;
+  padding: 1.5rem;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #aaa;
+}

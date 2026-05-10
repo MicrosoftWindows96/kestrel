@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Your vehicle{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/vehicle"
+      class="legacy-form"
+      data-test-step="vehicle">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Your vehicle</h1>
+  <div class="field-row">
+    <label>Make of vehicle</label>
+    {% set fid = field_ids.get('vehicle_make', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="vehicle_make" type="text"
+           value="{{ field_values.vehicle_make or '' }}"
+           data-test-field-vehicle_make>
+  </div>
+  <div class="field-row">
+    <label>Model</label>
+    {% set fid = field_ids.get('vehicle_model', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="vehicle_model" type="text"
+           value="{{ field_values.vehicle_model or '' }}"
+           data-test-field-vehicle_model>
+  </div>
+  <div class="field-row">
+    <label>Year of manufacture</label>
+    {% set fid = field_ids.get('vehicle_year', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="vehicle_year" type="text"
+           value="{{ field_values.vehicle_year or '' }}"
+           data-test-field-vehicle_year>
+  </div>
+  <div class="field-row">
+    <label>Estimated value</label>
+    {% set fid = field_ids.get('vehicle_value', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="vehicle_value" type="text"
+           value="{{ field_values.vehicle_value or '' }}"
+           data-test-field-vehicle_value>
+  </div>
+  <div class="field-row">
+    <label>Fuel type</label>
+    {% set fid = field_ids.get('vehicle_fuel', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="vehicle_fuel"
+            data-test-field-vehicle_fuel>
+      <option value=""></option>
+      <option value="petrol" {% if field_values.vehicle_fuel == 'petrol' %}selected{% endif %}>Petrol</option>
+      <option value="diesel" {% if field_values.vehicle_fuel == 'diesel' %}selected{% endif %}>Diesel</option>
+      <option value="hybrid" {% if field_values.vehicle_fuel == 'hybrid' %}selected{% endif %}>Hybrid</option>
+      <option value="electric" {% if field_values.vehicle_fuel == 'electric' %}selected{% endif %}>Electric</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <label>Gearbox</label>
+    {% set fid = field_ids.get('vehicle_transmission', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="vehicle_transmission"
+            data-test-field-vehicle_transmission>
+      <option value=""></option>
+      <option value="manual" {% if field_values.vehicle_transmission == 'manual' %}selected{% endif %}>Manual</option>
+      <option value="automatic" {% if field_values.vehicle_transmission == 'automatic' %}selected{% endif %}>Automatic</option>
+    </select>
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

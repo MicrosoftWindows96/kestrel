@@ -1,0 +1,16 @@
+<div data-test-step="additional-drivers" hx-target="this" hx-swap="outerHTML" class="minimal">
+  <form hx-post="/quote/{{ sid }}/additional-drivers" hx-target="closest [data-test-step]" hx-swap="outerHTML">
+    <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+    <label>How many additional drivers?
+      <select name="additional_driver_count" data-test-field-additional_driver_count>
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+      {% if errors.additional_driver_count %}<span data-tooltip-error data-test-error-additional_driver_count>{{ errors.additional_driver_count }}</span>{% endif %}
+    </label>
+    <button data-test-submit hx-post="/quote/{{ sid }}/additional-drivers">Continue</button>
+  </form>
+</div>

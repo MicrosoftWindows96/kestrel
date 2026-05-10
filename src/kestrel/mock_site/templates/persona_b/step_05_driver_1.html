@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Who is the main driver?{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/driver-1"
+      class="legacy-form"
+      data-test-step="driver-1">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Who is the main driver?</h1>
+  <div class="field-row">
+    <label>First name</label>
+    {% set fid = field_ids.get('driver_1_forename', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_forename" type="text"
+           value="{{ field_values.driver_1_forename or '' }}"
+           data-test-field-driver_1_forename>
+  </div>
+  <div class="field-row">
+    <label>Family name</label>
+    {% set fid = field_ids.get('driver_1_surname', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_surname" type="text"
+           value="{{ field_values.driver_1_surname or '' }}"
+           data-test-field-driver_1_surname>
+  </div>
+  <div class="field-row">
+    <label>Date of birth</label>
+    {% set fid = field_ids.get('driver_1_dob', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_dob" type="text"
+           placeholder="YYYY-MM-DD"
+           value="{{ field_values.driver_1_dob or '' }}"
+           data-test-field-driver_1_dob>
+  </div>
+  <div class="field-row">
+    <label>Licence held</label>
+    {% set fid = field_ids.get('driver_1_licence_type', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_licence_type"
+            data-test-field-driver_1_licence_type>
+      <option value=""></option>
+      <option value="full_uk">Full UK</option>
+      <option value="provisional_uk">Provisional UK</option>
+      <option value="full_eu">Full EU</option>
+      <option value="other">Other</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <label>Licence date</label>
+    {% set fid = field_ids.get('driver_1_licence_held_since', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_licence_held_since" type="text"
+           placeholder="YYYY-MM-DD"
+           value="{{ field_values.driver_1_licence_held_since or '' }}"
+           data-test-field-driver_1_licence_held_since>
+  </div>
+  <div class="field-row">
+    <label>What you do</label>
+    {% set fid = field_ids.get('driver_1_occupation', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_occupation" type="text"
+           value="{{ field_values.driver_1_occupation or '' }}"
+           data-test-field-driver_1_occupation>
+  </div>
+  <div class="field-row">
+    <label>Employment status</label>
+    {% set fid = field_ids.get('driver_1_employment', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_employment"
+            data-test-field-driver_1_employment>
+      <option value=""></option>
+      <option value="employed">Employed</option>
+      <option value="self_employed">Self employed</option>
+      <option value="unemployed">Unemployed</option>
+      <option value="retired">Retired</option>
+      <option value="student">Student</option>
+    </select>
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

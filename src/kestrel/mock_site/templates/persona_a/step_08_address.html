@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Address{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/address"
+      class="aggregator-form"
+      data-test-step="address">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Address</legend>
+    <div class="row">
+      <label for="address-postcode">Postcode</label>
+      <input id="address-postcode"
+             name="address_postcode"
+             type="text"
+             autocomplete="postal-code"
+             data-test-field-address_postcode>
+      <span class="field-error" data-test-error-address_postcode></span>
+    </div>
+    <div class="row">
+      <label for="address-line-1">Line 1</label>
+      <input id="address-line-1"
+             name="address_line_1"
+             type="text"
+             autocomplete="address-line1"
+             data-test-field-address_line_1>
+      <span class="field-error" data-test-error-address_line_1></span>
+    </div>
+    <div class="row">
+      <label for="address-town">Town</label>
+      <input id="address-town"
+             name="address_town"
+             type="text"
+             autocomplete="address-level2"
+             data-test-field-address_town>
+      <span class="field-error" data-test-error-address_town></span>
+    </div>
+  </fieldset>
+  <button data-test-submit>Continue</button>
+</form>
+{% endblock %}

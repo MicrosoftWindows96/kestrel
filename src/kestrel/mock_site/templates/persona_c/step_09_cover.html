@@ -1,0 +1,43 @@
+<div data-test-step="cover" hx-target="this" hx-swap="outerHTML" class="minimal">
+  <form hx-post="/quote/{{ sid }}/cover" hx-target="closest [data-test-step]" hx-swap="outerHTML">
+    <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+    <label>Cover type
+      <select name="cover_type" data-test-field-cover_type>
+        <option value=""></option>
+        <option value="fully_comp">Fully comp</option>
+        <option value="third_party_fire_theft">Third party, fire and theft</option>
+        <option value="third_party_only">Third party only</option>
+      </select>
+      {% if errors.cover_type %}<span data-tooltip-error data-test-error-cover_type>{{ errors.cover_type }}</span>{% endif %}
+    </label>
+    <label>Voluntary excess
+      <input name="voluntary_excess" type="text"
+             value="{{ field_values.voluntary_excess or '' }}"
+             data-test-field-voluntary_excess>
+      {% if errors.voluntary_excess %}<span data-tooltip-error data-test-error-voluntary_excess>{{ errors.voluntary_excess }}</span>{% endif %}
+    </label>
+    <label>No-claims years
+      <input name="ncb_years" type="text"
+             value="{{ field_values.ncb_years or '' }}"
+             data-test-field-ncb_years>
+      {% if errors.ncb_years %}<span data-tooltip-error data-test-error-ncb_years>{{ errors.ncb_years }}</span>{% endif %}
+    </label>
+    <label>Protect no-claims
+      <select name="ncb_protection" data-test-field-ncb_protection>
+        <option value="false">No</option>
+        <option value="true">Yes</option>
+      </select>
+      {% if errors.ncb_protection %}<span data-tooltip-error data-test-error-ncb_protection>{{ errors.ncb_protection }}</span>{% endif %}
+    </label>
+    <label>Add-ons
+      {% set selected_addons = field_values.addons or [] %}
+      <select name="addons" multiple data-test-field-addons>
+        <option value="breakdown" {% if 'breakdown' in selected_addons %}selected{% endif %}>Breakdown</option>
+        <option value="courtesy_car" {% if 'courtesy_car' in selected_addons %}selected{% endif %}>Courtesy car</option>
+        <option value="key_cover" {% if 'key_cover' in selected_addons %}selected{% endif %}>Key cover</option>
+      </select>
+      {% if errors.addons %}<span data-tooltip-error data-test-error-addons>{{ errors.addons }}</span>{% endif %}
+    </label>
+    <button data-test-submit hx-post="/quote/{{ sid }}/cover">Continue</button>
+  </form>
+</div>

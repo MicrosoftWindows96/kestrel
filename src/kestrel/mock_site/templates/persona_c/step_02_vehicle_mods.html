@@ -1,0 +1,18 @@
+<div data-test-step="vehicle-mods" hx-target="this" hx-swap="outerHTML" class="minimal">
+  <form hx-post="/quote/{{ sid }}/vehicle-mods" hx-target="closest [data-test-step]" hx-swap="outerHTML">
+    <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+    <label>Vehicle modifications
+      {% set selected_mods = field_values.vehicle_mods or [] %}
+      <select name="vehicle_mods" multiple data-test-field-vehicle_mods>
+        <option value="alloy_wheels" {% if 'alloy_wheels' in selected_mods %}selected{% endif %}>Alloy wheels</option>
+        <option value="suspension" {% if 'suspension' in selected_mods %}selected{% endif %}>Suspension</option>
+        <option value="exhaust" {% if 'exhaust' in selected_mods %}selected{% endif %}>Exhaust</option>
+        <option value="bodykit" {% if 'bodykit' in selected_mods %}selected{% endif %}>Body kit</option>
+        <option value="engine_remap" {% if 'engine_remap' in selected_mods %}selected{% endif %}>Engine remap</option>
+        <option value="none" {% if 'none' in selected_mods %}selected{% endif %}>None</option>
+      </select>
+      {% if errors.vehicle_mods %}<span data-tooltip-error data-test-error-vehicle_mods>{{ errors.vehicle_mods }}</span>{% endif %}
+    </label>
+    <button data-test-submit hx-post="/quote/{{ sid }}/vehicle-mods">Continue</button>
+  </form>
+</div>

@@ -1,0 +1,24 @@
+<form data-test-step="parking" class="minimal" method="post" action="/quote/{{ sid }}/parking">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <label>Overnight
+    <select name="parking_overnight" data-test-field-parking_overnight>
+      <option value=""></option>
+      <option value="garage">Garage</option>
+      <option value="driveway">Driveway</option>
+      <option value="street">Street</option>
+      <option value="car_park">Car park</option>
+    </select>
+    {% if errors.parking_overnight %}<span data-tooltip-error data-test-error-parking_overnight>{{ errors.parking_overnight }}</span>{% endif %}
+  </label>
+  <label>Daytime
+    <select name="parking_daytime" data-test-field-parking_daytime>
+      <option value=""></option>
+      <option value="garage">Garage</option>
+      <option value="driveway">Driveway</option>
+      <option value="street">Street</option>
+      <option value="work_car_park">Work car park</option>
+    </select>
+    {% if errors.parking_daytime %}<span data-tooltip-error data-test-error-parking_daytime>{{ errors.parking_daytime }}</span>{% endif %}
+  </label>
+  <button data-test-submit type="submit">Continue</button>
+</form>

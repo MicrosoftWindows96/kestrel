@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Driving history{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/driver-1-history"
+      class="legacy-form"
+      data-test-step="driver-1-history">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Past claims and convictions</h1>
+  <div class="field-row">
+    <label>Previous claims (JSON list)</label>
+    {% set fid = field_ids.get('driver_1_claims', '') %}
+    <textarea {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_claims" rows="4"
+              placeholder="[]"
+              data-test-field-driver_1_claims>{{ field_values.driver_1_claims or '' }}</textarea>
+  </div>
+  <div class="field-row">
+    <label>Previous convictions (JSON list)</label>
+    {% set fid = field_ids.get('driver_1_convictions', '') %}
+    <textarea {% if fid %}id="{{ fid }}"{% endif %} name="driver_1_convictions" rows="4"
+              placeholder="[]"
+              data-test-field-driver_1_convictions>{{ field_values.driver_1_convictions or '' }}</textarea>
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

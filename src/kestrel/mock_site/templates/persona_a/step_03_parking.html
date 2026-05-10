@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Parking{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/parking"
+      class="aggregator-form"
+      data-test-step="parking">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Parking</legend>
+    <div class="row">
+      <label for="parking-overnight">Overnight</label>
+      <select id="parking-overnight"
+              name="parking_overnight"
+              data-test-field-parking_overnight>
+        <option value=""></option>
+        <option value="garage">Garage</option>
+        <option value="driveway">Driveway</option>
+        <option value="street">Street</option>
+        <option value="car_park">Car park</option>
+      </select>
+      <span class="field-error" data-test-error-parking_overnight></span>
+    </div>
+    <div class="row">
+      <label for="parking-daytime">Daytime</label>
+      <select id="parking-daytime"
+              name="parking_daytime"
+              data-test-field-parking_daytime>
+        <option value=""></option>
+        <option value="garage">Garage</option>
+        <option value="driveway">Driveway</option>
+        <option value="street">Street</option>
+        <option value="work_car_park">Work car park</option>
+      </select>
+      <span class="field-error" data-test-error-parking_daytime></span>
+    </div>
+  </fieldset>
+  <button data-test-submit>Continue</button>
+</form>
+{% endblock %}

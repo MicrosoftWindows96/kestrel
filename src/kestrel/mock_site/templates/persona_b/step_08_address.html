@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Your address{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/address"
+      class="legacy-form"
+      data-test-step="address">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Where do you live?</h1>
+  <div class="field-row">
+    <label>Postcode</label>
+    {% set fid = field_ids.get('address_postcode', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="address_postcode" type="text"
+           autocomplete="postal-code"
+           value="{{ field_values.address_postcode or '' }}"
+           data-test-field-address_postcode>
+  </div>
+  <div class="field-row">
+    <label>House number and road</label>
+    {% set fid = field_ids.get('address_line_1', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="address_line_1" type="text"
+           autocomplete="address-line1"
+           value="{{ field_values.address_line_1 or '' }}"
+           data-test-field-address_line_1>
+  </div>
+  <div class="field-row">
+    <label>Town or city</label>
+    {% set fid = field_ids.get('address_town', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="address_town" type="text"
+           autocomplete="address-level2"
+           value="{{ field_values.address_town or '' }}"
+           data-test-field-address_town>
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

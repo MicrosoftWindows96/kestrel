@@ -1,0 +1,10 @@
+<section class="minimal" data-test-quote-breakdown>
+  <output data-premium="{{ premium_total_raw or '' }}" data-test-quote-total>{{ premium_total or '' }}</output>
+  <ul>
+    {% for addon in addons|default([]) %}
+    <li data-test-quote-addon-{{ addon.name }}>
+      {{ addon.label|default(addon.name) }}: {{ addon.price_str|default('') }}
+    </li>
+    {% endfor %}
+  </ul>
+</section>

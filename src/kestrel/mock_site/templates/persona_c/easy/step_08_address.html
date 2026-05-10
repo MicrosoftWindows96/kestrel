@@ -1,0 +1,22 @@
+<form data-test-step="address" class="minimal" method="post" action="/quote/{{ sid }}/address">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <label>Postcode
+    <input name="address_postcode" type="text" autocomplete="postal-code"
+           value="{{ field_values.address_postcode or '' }}"
+           data-test-field-address_postcode>
+    {% if errors.address_postcode %}<span data-tooltip-error data-test-error-address_postcode>{{ errors.address_postcode }}</span>{% endif %}
+  </label>
+  <label>Line 1
+    <input name="address_line_1" type="text" autocomplete="address-line1"
+           value="{{ field_values.address_line_1 or '' }}"
+           data-test-field-address_line_1>
+    {% if errors.address_line_1 %}<span data-tooltip-error data-test-error-address_line_1>{{ errors.address_line_1 }}</span>{% endif %}
+  </label>
+  <label>Town
+    <input name="address_town" type="text" autocomplete="address-level2"
+           value="{{ field_values.address_town or '' }}"
+           data-test-field-address_town>
+    {% if errors.address_town %}<span data-tooltip-error data-test-error-address_town>{{ errors.address_town }}</span>{% endif %}
+  </label>
+  <button data-test-submit type="submit">Continue</button>
+</form>

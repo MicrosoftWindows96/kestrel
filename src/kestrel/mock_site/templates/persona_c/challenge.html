@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="kestrel-challenge" content="active">
+  <title>Verifying you are human</title>
+  <link rel="stylesheet" href="/static/css/persona_c.css">
+</head>
+<body>
+  <div data-test-challenge-active class="challenge-shell">
+    <p>Verifying you are human ...</p>
+    {% if manual %}
+    <form id="kestrel-manual-solve" method="post" action="/challenge/solve">
+      <input type="hidden" name="next" value="{{ next }}">
+      <button data-test-challenge-solve-button type="submit">Continue</button>
+    </form>
+    {% else %}
+    <noscript>JavaScript is required to continue. Reload with manual mode if needed.</noscript>
+    <script>
+      (function () {
+        var nextUrl = {{ next | tojson }};
+        var delayMs = {{ delay_ms }};
+        setTimeout(function () {
+          fetch("/challenge/solve", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            credentials: "same-origin",
+            body: JSON.stringify({next: nextUrl})
+          }).then(function (response) {
+            if (!response.ok) {
+              throw new Error("solve failed: " + response.status);
+            }
+            return response.json();
+          }).then(function (data) {
+            window.location.href = data.next;
+          }).catch(function () {
+            window.location.reload();
+          });
+        }, delayMs);
+      })();
+    </script>
+    {% endif %}
+  </div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Modifications{% endblock %}
+{% block head %}
+{% if difficulty != 'easy' %}
+<script src="/static/htmx.min.js"></script>
+{% endif %}
+{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/vehicle-mods"
+      class="legacy-form"
+      data-test-step="vehicle-mods">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Modifications</h1>
+  <div class="field-row">
+    <label>Select any modifications</label>
+    {% set fid = field_ids.get('vehicle_mods', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="vehicle_mods" multiple
+            data-test-field-vehicle_mods>
+      <option value="alloy_wheels">Alloy wheels</option>
+      <option value="suspension">Suspension</option>
+      <option value="exhaust">Exhaust</option>
+      <option value="bodykit">Body kit</option>
+      <option value="engine_remap">Engine remap</option>
+      <option value="none">None</option>
+    </select>
+  </div>
+  {% if difficulty != 'easy' %}
+  <button type="button"
+          data-test-add-mod
+          hx-post="/quote/{{ sid|default('') }}/vehicle-mods/add"
+          hx-target="closest .field-row"
+          hx-swap="beforeend">Add another modification</button>
+  {% endif %}
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

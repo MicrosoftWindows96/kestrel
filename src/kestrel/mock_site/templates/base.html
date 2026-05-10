@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Mock Quote{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/{{ persona_css|default('persona_a.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
