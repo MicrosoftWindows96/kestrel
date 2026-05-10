@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Mileage{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/mileage"
+      class="aggregator-form"
+      data-test-step="mileage">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Mileage</legend>
+    <div class="row">
+      <label for="annual-mileage">Annual mileage</label>
+      <input id="annual-mileage"
+             name="annual_mileage"
+             type="text"
+             data-test-field-annual_mileage>
+      <span class="field-error" data-test-error-annual_mileage></span>
+    </div>
+    <div class="row">
+      <label for="business-use">Business use</label>
+      <select id="business-use"
+              name="business_use"
+              data-test-field-business_use>
+        <option value=""></option>
+        <option value="none">None</option>
+        <option value="class_1">Class 1</option>
+        <option value="class_2">Class 2</option>
+        <option value="class_3">Class 3</option>
+      </select>
+      <span class="field-error" data-test-error-business_use></span>
+    </div>
+  </fieldset>
+  <button data-test-submit>Continue</button>
+</form>
+{% endblock %}

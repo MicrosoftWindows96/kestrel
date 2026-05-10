@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Your quote{% endblock %}
+{% block content %}
+<section data-test-quote-breakdown>
+  <h1>Your quote</h1>
+  <p>
+    <span class="premium-total"
+          data-test-quote-total>{{ premium_total or '' }}</span>
+  </p>
+  <ul>
+    {% for addon in addons|default([]) %}
+      <li data-test-quote-addon-{{ addon.name }}>
+        {{ addon.label|default(addon.name) }}: {{ addon.price|default('') }}
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

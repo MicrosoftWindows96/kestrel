@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Vehicle modifications{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/vehicle-mods"
+      class="aggregator-form"
+      data-test-step="vehicle-mods">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Vehicle modifications</legend>
+    <div class="row">
+      <label for="vehicle-mods">Modifications</label>
+      <select id="vehicle-mods"
+              name="vehicle_mods"
+              multiple
+              data-test-field-vehicle_mods>
+        <option value="alloy_wheels">Alloy wheels</option>
+        <option value="suspension">Suspension</option>
+        <option value="exhaust">Exhaust</option>
+        <option value="bodykit">Body kit</option>
+        <option value="engine_remap">Engine remap</option>
+        <option value="none">None</option>
+      </select>
+      <span class="field-error" data-test-error-vehicle_mods></span>
+    </div>
+  </fieldset>
+  <button data-test-submit>Continue</button>
+</form>
+{% endblock %}

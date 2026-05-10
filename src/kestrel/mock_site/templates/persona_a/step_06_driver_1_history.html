@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Driver history{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/driver-1-history"
+      class="aggregator-form"
+      data-test-step="driver-1-history">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Claims and convictions</legend>
+    <div class="row">
+      <label for="driver-1-claims">Claims (JSON)</label>
+      <textarea id="driver-1-claims"
+                name="driver_1_claims"
+                rows="4"
+                placeholder="[]"
+                data-test-field-driver_1_claims></textarea>
+      <span class="field-error" data-test-error-driver_1_claims></span>
+    </div>
+    <div class="row">
+      <label for="driver-1-convictions">Convictions (JSON)</label>
+      <textarea id="driver-1-convictions"
+                name="driver_1_convictions"
+                rows="4"
+                placeholder="[]"
+                data-test-field-driver_1_convictions></textarea>
+      <span class="field-error" data-test-error-driver_1_convictions></span>
+    </div>
+  </fieldset>
+  <button data-test-submit>Continue</button>
+</form>
+{% endblock %}

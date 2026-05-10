@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Cover{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/cover"
+      class="aggregator-form"
+      data-test-step="cover">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Cover</legend>
+    <div class="row">
+      <label for="cover-type">Cover type</label>
+      <select id="cover-type"
+              name="cover_type"
+              data-test-field-cover_type>
+        <option value=""></option>
+        <option value="fully_comp">Fully comp</option>
+        <option value="third_party_fire_theft">Third party, fire and theft</option>
+        <option value="third_party_only">Third party only</option>
+      </select>
+      <span class="field-error" data-test-error-cover_type></span>
+    </div>
+    <div class="row">
+      <label for="voluntary-excess">Voluntary excess</label>
+      <input id="voluntary-excess"
+             name="voluntary_excess"
+             type="text"
+             data-test-field-voluntary_excess>
+      <span class="field-error" data-test-error-voluntary_excess></span>
+    </div>
+    <div class="row">
+      <label for="ncb-years">No-claims years</label>
+      <input id="ncb-years"
+             name="ncb_years"
+             type="text"
+             data-test-field-ncb_years>
+      <span class="field-error" data-test-error-ncb_years></span>
+    </div>
+    <div class="row">
+      <label for="ncb-protection">Protect NCB</label>
+      <select id="ncb-protection"
+              name="ncb_protection"
+              data-test-field-ncb_protection>
+        <option value="false">No</option>
+        <option value="true">Yes</option>
+      </select>
+      <span class="field-error" data-test-error-ncb_protection></span>
+    </div>
+    <div class="row">
+      <label for="addons">Add-ons</label>
+      <select id="addons"
+              name="addons"
+              multiple
+              data-test-field-addons>
+        <option value="breakdown">Breakdown</option>
+        <option value="legal_cover">Legal cover</option>
+        <option value="courtesy_car">Courtesy car</option>
+        <option value="key_cover">Key cover</option>
+        <option value="windscreen">Windscreen</option>
+      </select>
+      <span class="field-error" data-test-error-addons></span>
+    </div>
+  </fieldset>
+  <button data-test-submit>Continue</button>
+</form>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Additional drivers{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/additional-drivers"
+      class="aggregator-form"
+      data-test-step="additional-drivers">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Additional drivers</legend>
+    <div class="row">
+      <label for="additional-driver-count">How many?</label>
+      <select id="additional-driver-count"
+              name="additional_driver_count"
+              data-test-field-additional_driver_count>
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+      <span class="field-error" data-test-error-additional_driver_count></span>
+    </div>
+    {# Repeated driver_N_* blocks land in section-06 once route logic exists. #}
+  </fieldset>
+  <button data-test-submit>Continue</button>
+</form>
+{% endblock %}

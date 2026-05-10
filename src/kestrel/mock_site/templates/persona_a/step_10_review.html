@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Review{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/review"
+      class="aggregator-form"
+      data-test-step="review">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <fieldset>
+    <legend>Review your quote</legend>
+    {# Read-only summary populated in section-06 once route logic exists. #}
+  </fieldset>
+  <button data-test-submit>Get quote</button>
+</form>
+{% endblock %}
