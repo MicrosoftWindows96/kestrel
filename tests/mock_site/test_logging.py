@@ -27,6 +27,8 @@ REQUIRED_FIELDS = frozenset(
         "status",
         "duration_ms",
         "request_id",
+        "session_id",
+        "step_name",
         "difficulty",
         "persona",
     }
@@ -61,6 +63,29 @@ async def fresh_client() -> AsyncIterator[httpx.AsyncClient]:
     async with LifespanManager(app) as mgr:
         transport = httpx.ASGITransport(app=mgr.app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+            yield c
+
+
+@pytest_asyncio.fixture
+async def easy_client() -> AsyncIterator[httpx.AsyncClient]:
+    settings = Settings(
+        difficulty=Difficulty.EASY,
+        persona=Persona.A,
+        host="127.0.0.1",
+        port=8000,
+        log_file=None,
+        quiet=False,
+        seed=20260510,
+        secret=b"test" * 8,
+        janitor_interval_seconds=86400,
+        intermittent_challenge_prob=0.0,
+    )
+    app = create_app(settings)
+    async with LifespanManager(app) as mgr:
+        transport = httpx.ASGITransport(app=mgr.app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=False
+        ) as c:
             yield c
 
 
@@ -157,3 +182,175 @@ async def test_bound_contextvars_clears_per_request(
     await fresh_client.get("/_c")
     leftover = structlog.contextvars.get_contextvars()
     assert "request_id" not in leftover
+    assert "session_id" not in leftover
+
+
+async def test_validation_failure_carries_error_key_no_provided_value(
+    easy_client: httpx.AsyncClient,
+) -> None:
+    """`validation_failure` must surface `error_key` and never the rejected input."""
+    fresh_client = easy_client
+    start = await fresh_client.get("/quote/start", follow_redirects=False)
+    sid = start.headers["location"].split("/")[2]
+    bad_postcode = "Q1 2AB"  # invalid - Q is not a valid first-letter
+    # Drive the form to the address step so the validator fires on its field.
+    valid_steps = [
+        (
+            "vehicle",
+            {
+                "vehicle_make": "Vauxhall",
+                "vehicle_model": "Astra",
+                "vehicle_year": "2018",
+                "vehicle_value": "8500",
+                "vehicle_fuel": "petrol",
+                "vehicle_transmission": "manual",
+            },
+        ),
+        ("vehicle-mods", {"vehicle_mods": "none"}),
+        ("parking", {"parking_overnight": "driveway", "parking_daytime": "street"}),
+        ("mileage", {"annual_mileage": "8000", "business_use": "none"}),
+        (
+            "driver-1",
+            {
+                "driver_1_forename": "Alex",
+                "driver_1_surname": "Smith",
+                "driver_1_dob": "1990-04-01",
+                "driver_1_licence_type": "full_uk",
+                "driver_1_licence_held_since": "2010-04-01",
+                "driver_1_occupation": "engineer",
+                "driver_1_employment": "employed",
+            },
+        ),
+        ("driver-1-history", {"driver_1_claims": "[]", "driver_1_convictions": "[]"}),
+        ("additional-drivers", {"additional_driver_count": "0"}),
+    ]
+    for step, payload in valid_steps:
+        await fresh_client.post(f"/quote/{sid}/{step}", data=payload)
+    with structlog.testing.capture_logs() as cap:
+        bad = await fresh_client.post(
+            f"/quote/{sid}/address",
+            data={
+                "address_postcode": bad_postcode,
+                "address_line_1": "1 Example Street",
+                "address_town": "Test Town",
+            },
+        )
+        assert bad.status_code == 200
+    failures = [entry for entry in cap if entry.get("event") == "validation_failure"]
+    assert failures, "expected validation_failure event"
+    payload = failures[-1]
+    assert payload.get("session_id") == sid
+    assert payload.get("step_name") == "address"
+    assert payload.get("field_name") == "address_postcode"
+    assert "error_key" in payload
+    # Critical: the rejected input must NEVER appear anywhere in the payload.
+    for value in payload.values():
+        if isinstance(value, str):
+            assert bad_postcode not in value
+
+
+async def test_quote_computed_event_payload(easy_client: httpx.AsyncClient) -> None:
+    """`quote_computed` event fires on submit and carries pence-resolution total."""
+    fresh_client = easy_client
+    start = await fresh_client.get("/quote/start", follow_redirects=False)
+    sid = start.headers["location"].split("/")[2]
+    steps = [
+        (
+            "vehicle",
+            {
+                "vehicle_make": "Vauxhall",
+                "vehicle_model": "Astra",
+                "vehicle_year": "2018",
+                "vehicle_value": "8500",
+                "vehicle_fuel": "petrol",
+                "vehicle_transmission": "manual",
+            },
+        ),
+        ("vehicle-mods", {"vehicle_mods": "none"}),
+        ("parking", {"parking_overnight": "driveway", "parking_daytime": "street"}),
+        ("mileage", {"annual_mileage": "8000", "business_use": "none"}),
+        (
+            "driver-1",
+            {
+                "driver_1_forename": "Alex",
+                "driver_1_surname": "Smith",
+                "driver_1_dob": "1990-04-01",
+                "driver_1_licence_type": "full_uk",
+                "driver_1_licence_held_since": "2010-04-01",
+                "driver_1_occupation": "engineer",
+                "driver_1_employment": "employed",
+            },
+        ),
+        ("driver-1-history", {"driver_1_claims": "[]", "driver_1_convictions": "[]"}),
+        ("additional-drivers", {"additional_driver_count": "0"}),
+        (
+            "address",
+            {
+                "address_postcode": "SW1A 1AA",
+                "address_line_1": "1 Example Street",
+                "address_town": "Test Town",
+            },
+        ),
+        (
+            "cover",
+            {
+                "cover_type": "fully_comp",
+                "voluntary_excess": "250",
+                "ncb_years": "5",
+                "ncb_protection": "false",
+                "addons": "breakdown",
+            },
+        ),
+    ]
+    for step, payload in steps:
+        await fresh_client.post(f"/quote/{sid}/{step}", data=payload)
+    with structlog.testing.capture_logs() as cap:
+        submit = await fresh_client.post(f"/quote/{sid}/submit")
+        assert submit.status_code == 200, submit.text
+    quotes = [entry for entry in cap if entry.get("event") == "quote_computed"]
+    assert quotes, "expected quote_computed event"
+    payload = quotes[-1]
+    assert payload.get("session_id") == sid
+    assert payload.get("persona") == "persona_a"
+    total_pence = payload.get("total_premium_pence")
+    assert isinstance(total_pence, int)
+    assert total_pence > 0
+
+
+async def test_state_transition_field_names_is_frozenset(
+    easy_client: httpx.AsyncClient,
+) -> None:
+    """Plan section 16 pins `field_names` as a `frozenset[str]` payload."""
+    fresh_client = easy_client
+    start = await fresh_client.get("/quote/start", follow_redirects=False)
+    sid = start.headers["location"].split("/")[2]
+    with structlog.testing.capture_logs() as cap:
+        await fresh_client.post(
+            f"/quote/{sid}/vehicle",
+            data={
+                "vehicle_make": "Vauxhall",
+                "vehicle_model": "Astra",
+                "vehicle_year": "2018",
+                "vehicle_value": "8500",
+                "vehicle_fuel": "petrol",
+                "vehicle_transmission": "manual",
+            },
+        )
+    transitions = [entry for entry in cap if entry.get("event") == "state_transition"]
+    assert transitions
+    payload = transitions[-1]
+    assert payload.get("session_id") == sid
+    assert payload.get("step_name") == "vehicle"
+    field_names = payload.get("field_names")
+    assert isinstance(field_names, frozenset)
+    assert "vehicle_make" in field_names
+
+
+async def test_skipped_paths_emit_no_request_event(
+    fresh_client: httpx.AsyncClient,
+) -> None:
+    with structlog.testing.capture_logs() as cap:
+        for path in ("/healthz", "/readyz", "/static/htmx.min.js"):
+            await fresh_client.get(path)
+    requests = [entry for entry in cap if entry.get("event") == "request"]
+    assert requests == [], requests

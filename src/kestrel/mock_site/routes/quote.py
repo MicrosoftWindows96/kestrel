@@ -293,6 +293,14 @@ async def post_step(
     parsed_payload = _form_to_payload(step, form)
     parsed, errors = _parse_step_form(step, parsed_payload)
     if errors:
+        for field_name, error_key in errors.items():
+            _logger.info(
+                "validation_failure",
+                session_id=sid,
+                step_name=step,
+                field_name=field_name,
+                error_key=error_key,
+            )
         return _render_step(request, sid, step, state, errors=errors, status_code=200)
 
     from_state = _logical_pointer_label(state)
@@ -533,6 +541,12 @@ def _render_quote_result(request: Request, sid: str, state: FormState) -> HTMLRe
         addon_catalog=persona_spec.addon_catalog,
     )
     premium = compute_premium(state, quote_spec)
+    _logger.info(
+        "quote_computed",
+        session_id=sid,
+        persona=settings.persona.value,
+        total_premium_pence=int(premium.total * 100),
+    )
     templates = request.app.state.templates
     csrf_service = request.app.state.csrf_service
     csrf_token = csrf_service.mint(request)
@@ -585,7 +599,10 @@ def _emit_state_transition(
         from_state=from_state,
         to_state=to_state,
         step_name=step_name,
-        field_names=tuple(sorted(field_names)),
+        # Plan section 16: `field_names` is a `frozenset[str]` in the log
+        # payload. Pass the frozenset through without converting so downstream
+        # consumers can rely on the type contract.
+        field_names=field_names,
     )
 
 
