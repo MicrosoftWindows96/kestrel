@@ -10,43 +10,67 @@
     <legend>Vehicle</legend>
     <div class="row">
       <label for="vehicle-make">Make</label>
-      <input id="vehicle-make" name="vehicle_make" type="text" data-test-field-vehicle_make>
-      <span class="field-error" data-test-error-vehicle_make></span>
+      <input id="vehicle-make"
+             name="vehicle_make"
+             type="text"
+             value="{{ field_values.vehicle_make or '' }}"
+             data-test-field-vehicle_make>
+      <span class="field-error"
+            data-test-error-vehicle_make>{{ errors.vehicle_make or '' }}</span>
     </div>
     <div class="row">
       <label for="vehicle-model">Model</label>
-      <input id="vehicle-model" name="vehicle_model" type="text" data-test-field-vehicle_model>
-      <span class="field-error" data-test-error-vehicle_model></span>
+      <input id="vehicle-model"
+             name="vehicle_model"
+             type="text"
+             value="{{ field_values.vehicle_model or '' }}"
+             data-test-field-vehicle_model>
+      <span class="field-error"
+            data-test-error-vehicle_model>{{ errors.vehicle_model or '' }}</span>
     </div>
     <div class="row">
       <label for="vehicle-year">Year</label>
-      <input id="vehicle-year" name="vehicle_year" type="text" data-test-field-vehicle_year>
-      <span class="field-error" data-test-error-vehicle_year></span>
+      <input id="vehicle-year"
+             name="vehicle_year"
+             type="text"
+             value="{{ field_values.vehicle_year or '' }}"
+             data-test-field-vehicle_year>
+      <span class="field-error"
+            data-test-error-vehicle_year>{{ errors.vehicle_year or '' }}</span>
     </div>
     <div class="row">
       <label for="vehicle-value">Value</label>
-      <input id="vehicle-value" name="vehicle_value" type="text" data-test-field-vehicle_value>
-      <span class="field-error" data-test-error-vehicle_value></span>
+      <input id="vehicle-value"
+             name="vehicle_value"
+             type="text"
+             value="{{ field_values.vehicle_value or '' }}"
+             data-test-field-vehicle_value>
+      <span class="field-error"
+            data-test-error-vehicle_value>{{ errors.vehicle_value or '' }}</span>
     </div>
     <div class="row">
       <label for="vehicle-fuel">Fuel</label>
       <select id="vehicle-fuel" name="vehicle_fuel" data-test-field-vehicle_fuel>
         <option value=""></option>
-        <option value="petrol">Petrol</option>
-        <option value="diesel">Diesel</option>
-        <option value="hybrid">Hybrid</option>
-        <option value="electric">Electric</option>
+        <option value="petrol" {% if field_values.vehicle_fuel == 'petrol' %}selected{% endif %}>Petrol</option>
+        <option value="diesel" {% if field_values.vehicle_fuel == 'diesel' %}selected{% endif %}>Diesel</option>
+        <option value="hybrid" {% if field_values.vehicle_fuel == 'hybrid' %}selected{% endif %}>Hybrid</option>
+        <option value="electric" {% if field_values.vehicle_fuel == 'electric' %}selected{% endif %}>Electric</option>
       </select>
-      <span class="field-error" data-test-error-vehicle_fuel></span>
+      <span class="field-error"
+            data-test-error-vehicle_fuel>{{ errors.vehicle_fuel or '' }}</span>
     </div>
     <div class="row">
       <label for="vehicle-transmission">Transmission</label>
-      <select id="vehicle-transmission" name="vehicle_transmission" data-test-field-vehicle_transmission>
+      <select id="vehicle-transmission"
+              name="vehicle_transmission"
+              data-test-field-vehicle_transmission>
         <option value=""></option>
-        <option value="manual">Manual</option>
-        <option value="automatic">Automatic</option>
+        <option value="manual" {% if field_values.vehicle_transmission == 'manual' %}selected{% endif %}>Manual</option>
+        <option value="automatic" {% if field_values.vehicle_transmission == 'automatic' %}selected{% endif %}>Automatic</option>
       </select>
-      <span class="field-error" data-test-error-vehicle_transmission></span>
+      <span class="field-error"
+            data-test-error-vehicle_transmission>{{ errors.vehicle_transmission or '' }}</span>
     </div>
   </fieldset>
   <button data-test-submit>Continue</button>

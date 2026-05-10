@@ -15,6 +15,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Final, Protocol
 
+from fastapi import Request
+
 from kestrel.mock_site.config import Difficulty, Settings
 from kestrel.mock_site.state.models import FormState
 
@@ -72,6 +74,12 @@ def _build_sqlite_store() -> SessionStore:
     return SqliteSessionStore(db_path, owns_tempdir=tempdir)
 
 
+def get_session_store(request: Request) -> SessionStore:
+    """FastAPI dependency: per-request handle to the active store."""
+    store: SessionStore = request.app.state.session_store
+    return store
+
+
 __all__ = [
     "DEFAULT_SQLITE_DIR_PREFIX",
     "DEFAULT_SQLITE_FILENAME",
@@ -80,5 +88,6 @@ __all__ = [
     "StoreError",
     "StoreInitError",
     "StoreLockedError",
+    "get_session_store",
     "make_session_store",
 ]

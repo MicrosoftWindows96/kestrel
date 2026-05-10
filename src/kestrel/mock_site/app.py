@@ -24,6 +24,7 @@ from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 
 from kestrel.mock_site.config import Difficulty, Persona, Settings
+from kestrel.mock_site.csrf import CsrfService
 from kestrel.mock_site.logging import configure_logging
 from kestrel.mock_site.middleware.request_logger import RequestLoggerMiddleware
 from kestrel.mock_site.routes import health, quote
@@ -34,25 +35,35 @@ INTERMITTENT_PROB_LOW = 0.10
 INTERMITTENT_PROB_HIGH = 0.30
 
 
+_PERSONA_PREMIUM_OFFSETS: dict[Persona, int] = {
+    Persona.A: 0,
+    Persona.B: 175,
+    Persona.C: 350,
+}
+
+_PERSONA_ADDON_CATALOGS: dict[Persona, tuple[str, ...]] = {
+    Persona.A: ("breakdown", "legal_cover", "courtesy_car", "key_cover", "windscreen"),
+    Persona.B: ("breakdown", "legal_cover", "windscreen"),
+    Persona.C: ("breakdown", "courtesy_car", "key_cover"),
+}
+
+
 @dataclass(frozen=True, slots=True)
 class PersonaSpecStub:
-    """Phase A placeholder. Section 09/10 replace with real PersonaSpec."""
+    """Phase A placeholder. Sections 09/10 replace with the full PersonaSpec.
+
+    Carries the subset of fields that the active route surface
+    (sections 06-08) reads. The full divergence-axis matrix lands when
+    persona_b and persona_c content arrives.
+    """
 
     name: Persona
     template_dir: str
+    premium_seed_offset: int
+    addon_catalog: tuple[str, ...]
 
     def __repr__(self) -> str:
         return f"<PersonaSpec name={self.name}>"
-
-
-@dataclass(frozen=True, slots=True)
-class CsrfServiceStub:
-    """Phase A placeholder. Section 08 replaces with real CsrfService."""
-
-    enabled: bool
-
-    def __repr__(self) -> str:
-        return f"<CsrfServiceStub enabled={self.enabled}>"
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -86,11 +97,16 @@ def create_app(settings: Settings) -> FastAPI:
 
 
 def _build_persona_spec(settings: Settings) -> PersonaSpecStub:
-    return PersonaSpecStub(name=settings.persona, template_dir=settings.persona.value)
+    return PersonaSpecStub(
+        name=settings.persona,
+        template_dir=settings.persona.value,
+        premium_seed_offset=_PERSONA_PREMIUM_OFFSETS[settings.persona],
+        addon_catalog=_PERSONA_ADDON_CATALOGS[settings.persona],
+    )
 
 
-def _build_csrf_service(settings: Settings) -> CsrfServiceStub:
-    return CsrfServiceStub(enabled=settings.difficulty is Difficulty.HARD)
+def _build_csrf_service(settings: Settings) -> CsrfService:
+    return CsrfService(secret=settings.secret)
 
 
 def _draw_intermittent_prob(seed: int) -> float:
@@ -101,13 +117,19 @@ def _draw_intermittent_prob(seed: int) -> float:
 
 
 def _build_templates(settings: Settings) -> Jinja2Templates:
-    """Return a Jinja2Templates rooted at the active persona's directory."""
+    """Return a Jinja2Templates with the persona-aware search path.
+
+    Search order: persona dir (and the persona/easy/ overlay for persona_c
+    + EASY) first, then the shared templates root so that `base.html` and
+    other persona-agnostic helpers resolve.
+    """
     template_root = Path(__file__).resolve().parent / "templates"
     persona_dir = template_root / settings.persona.value
+    directories: list[str] = []
     if settings.persona is Persona.C and settings.difficulty is Difficulty.EASY:
-        directories = [str(persona_dir / "easy"), str(persona_dir)]
-    else:
-        directories = [str(persona_dir)]
+        directories.append(str(persona_dir / "easy"))
+    directories.append(str(persona_dir))
+    directories.append(str(template_root))
     return Jinja2Templates(directory=directories)
 
 
