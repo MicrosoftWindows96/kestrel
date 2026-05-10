@@ -91,6 +91,10 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.csrf_service = csrf_service
     app.state.intermittent_challenge_prob = intermittent_prob
     app.state.templates = _build_templates(settings)
+    # HARD intermittent-challenge accounting; populated lazily per session.
+    # Pruned by `_intermittent_fires` when a roll triggers re-challenge, so
+    # the dict stays bounded by the count of active gated sessions.
+    app.state.session_request_counters = {}
 
     mount_static(app)
     _register_middleware(app, settings)

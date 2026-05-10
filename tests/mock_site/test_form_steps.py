@@ -5,12 +5,17 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 
 import httpx
+import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
+from bs4 import BeautifulSoup
 
 from kestrel.mock_site import logging as mock_logging
 from kestrel.mock_site.app import create_app
 from kestrel.mock_site.config import Difficulty, Persona, Settings
+from kestrel.mock_site.csrf import CSRF_FORM_FIELD
+from kestrel.mock_site.middleware.challenge import FORCE_CHALLENGE_EVERY_ENV
+from kestrel.mock_site.routes.challenge import CLEARANCE_COOKIE
 
 VALID_VEHICLE = {
     "vehicle_make": "Vauxhall",
@@ -282,3 +287,123 @@ async def test_medium_challenge_interleave(medium_client: httpx.AsyncClient) -> 
     landed = await medium_client.get(f"/quote/{sid}/vehicle")
     assert landed.status_code == 200, landed.text
     assert 'data-test-step="vehicle"' in landed.text
+
+
+# -- HARD happy path (section 08) ---------------------------------------------
+
+
+def _hard_persona_a_settings() -> Settings:
+    return Settings(
+        difficulty=Difficulty.HARD,
+        persona=Persona.A,
+        host="127.0.0.1",
+        port=8000,
+        log_file=None,
+        quiet=True,
+        seed=20260510,
+        secret=b"test" * 8,
+        janitor_interval_seconds=86400,
+        intermittent_challenge_prob=0.10,
+    )
+
+
+@pytest_asyncio.fixture
+async def hard_client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[httpx.AsyncClient]:
+    """HARD app with intermittent disabled so the happy path stays single-flow."""
+    monkeypatch.delenv(FORCE_CHALLENGE_EVERY_ENV, raising=False)
+    mock_logging.reset_for_tests()
+    app = create_app(_hard_persona_a_settings())
+    app.state.intermittent_challenge_prob = 0.0
+    async with LifespanManager(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=False
+        ) as client:
+            yield client
+
+
+async def _solve_challenge(client: httpx.AsyncClient, next_path: str) -> None:
+    response = await client.post("/challenge/solve", json={"next": next_path})
+    assert response.status_code == 200, response.text
+
+
+def _extract_csrf_from_html(body: str) -> str:
+    soup = BeautifulSoup(body, "html.parser")
+    el = soup.find("input", attrs={"name": CSRF_FORM_FIELD})
+    assert el is not None, "csrf input missing"
+    value = el.get("value")
+    assert isinstance(value, str), "csrf input value missing"
+    assert value, "csrf input empty"
+    return value
+
+
+async def test_hard_full_10_step_happy_path(hard_client: httpx.AsyncClient) -> None:
+    sid = await _start_session(hard_client)
+    # Initial gate fires under HARD.
+    initial = await hard_client.get(f"/quote/{sid}/vehicle")
+    assert initial.status_code == 302
+    await _solve_challenge(hard_client, f"/quote/{sid}/vehicle")
+    for step, payload in STEP_PAYLOADS[:-1]:
+        render = await hard_client.get(f"/quote/{sid}/{step}")
+        assert render.status_code == 200, render.text
+        token = _extract_csrf_from_html(render.text)
+        post_payload = dict(payload, _csrf=token)
+        response = await hard_client.post(f"/quote/{sid}/{step}", data=post_payload)
+        assert response.status_code in {200, 302}, (
+            f"{step} returned {response.status_code}: {response.text}"
+        )
+    review_render = await hard_client.get(f"/quote/{sid}/review")
+    review_token = _extract_csrf_from_html(review_render.text)
+    submit = await hard_client.post(f"/quote/{sid}/submit", data={CSRF_FORM_FIELD: review_token})
+    assert submit.status_code == 200, submit.text
+    body = submit.text
+    assert "data-test-quote-total" in body
+
+
+async def test_hard_form_error_returns_full_page_200(hard_client: httpx.AsyncClient) -> None:
+    sid = await _start_session(hard_client)
+    initial = await hard_client.get(f"/quote/{sid}/vehicle")
+    assert initial.status_code == 302
+    await _solve_challenge(hard_client, f"/quote/{sid}/vehicle")
+    render = await hard_client.get(f"/quote/{sid}/vehicle")
+    token = _extract_csrf_from_html(render.text)
+    bad = dict(VALID_VEHICLE, vehicle_year="not-a-year", _csrf=token)
+    response = await hard_client.post(f"/quote/{sid}/vehicle", data=bad)
+    assert response.status_code == 200
+    body = response.text
+    assert "data-test-error-vehicle_year" in body
+
+
+async def test_hard_state_survives_mid_flow_rechallenge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """sqlite store keeps state when intermittent re-challenge clears clearance."""
+    monkeypatch.setenv(FORCE_CHALLENGE_EVERY_ENV, "3")
+    mock_logging.reset_for_tests()
+    app = create_app(_hard_persona_a_settings())
+    async with LifespanManager(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=False
+        ) as client:
+            sid = await _start_session(client)
+            await _solve_challenge(client, f"/quote/{sid}/vehicle")
+            render = await client.get(f"/quote/{sid}/vehicle")
+            assert render.status_code == 200, render.text
+            token = _extract_csrf_from_html(render.text)
+            post = await client.post(f"/quote/{sid}/vehicle", data=dict(VALID_VEHICLE, _csrf=token))
+            assert post.status_code == 302, post.text
+            # Trigger intermittent re-challenge on the third gated request.
+            for _ in range(3):
+                response = await client.get(f"/quote/{sid}/vehicle-mods")
+                if response.status_code == 302:
+                    break
+            else:
+                raise AssertionError("intermittent re-challenge never fired")
+            assert client.cookies.get(CLEARANCE_COOKIE) is None
+            await _solve_challenge(client, f"/quote/{sid}/vehicle-mods")
+            # Saved vehicle slot must still be populated -> back to vehicle
+            # renders the stored value.
+            recover = await client.get(f"/quote/{sid}/vehicle?back=1")
+            assert recover.status_code == 200, recover.text
+            assert "Vauxhall" in recover.text

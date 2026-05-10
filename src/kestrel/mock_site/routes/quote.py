@@ -398,10 +398,12 @@ def _render_step(
     status_code: int = 200,
 ) -> HTMLResponse:
     templates = request.app.state.templates
+    csrf_service = request.app.state.csrf_service
+    csrf_token = csrf_service.mint(request)
     persona_data = getattr(state, STEP_TO_ATTR[step], None)
     context = {
         "sid": sid,
-        "csrf_token": "",
+        "csrf_token": csrf_token,
         "step_name": step,
         "errors": errors,
         "field_values": persona_data.model_dump() if persona_data is not None else {},
@@ -412,6 +414,7 @@ def _render_step(
         context,
         status_code=status_code,
     )
+    csrf_service.set_cookie(response, csrf_token)
     return response
 
 
@@ -450,12 +453,14 @@ def _render_quote_result(request: Request, sid: str, state: FormState) -> HTMLRe
     )
     premium = compute_premium(state, quote_spec)
     templates = request.app.state.templates
+    csrf_service = request.app.state.csrf_service
+    csrf_token = csrf_service.mint(request)
     response: HTMLResponse = templates.TemplateResponse(
         request,
         "quote_result.html",
         {
             "sid": sid,
-            "csrf_token": "",
+            "csrf_token": csrf_token,
             "premium_total": _format_currency(premium.total, request.app.state.settings.persona),
             "addons": [
                 {"name": addon.name, "label": addon.name.replace("_", " "), "price": addon.price}
@@ -463,6 +468,7 @@ def _render_quote_result(request: Request, sid: str, state: FormState) -> HTMLRe
             ],
         },
     )
+    csrf_service.set_cookie(response, csrf_token)
     return response
 
 

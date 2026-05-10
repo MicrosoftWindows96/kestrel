@@ -277,3 +277,119 @@ def test_sanitize_next_accepts_canonical_path() -> None:
 )
 def test_sanitize_next_rejects_bad_inputs(bad: str | None) -> None:
     assert sanitize_next(bad) is None
+
+
+# -- HARD intermittent re-challenge (section 08) ------------------------------
+
+
+@pytest_asyncio.fixture
+async def hard_client_no_force(
+    monkeypatch: pytest.MonkeyPatch,
+) -> AsyncIterator[httpx.AsyncClient]:
+    """HARD client with no env override; the per-session RNG drives the roll."""
+    from kestrel.mock_site.middleware.challenge import FORCE_CHALLENGE_EVERY_ENV
+
+    monkeypatch.delenv(FORCE_CHALLENGE_EVERY_ENV, raising=False)
+    mock_logging.reset_for_tests()
+    app = create_app(_build_settings(Difficulty.HARD))
+    async with LifespanManager(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=False
+        ) as client:
+            yield client
+
+
+@pytest_asyncio.fixture
+async def hard_client_force_every_two(
+    monkeypatch: pytest.MonkeyPatch,
+) -> AsyncIterator[httpx.AsyncClient]:
+    """HARD client with KESTREL_MOCK_FORCE_CHALLENGE_EVERY=2."""
+    from kestrel.mock_site.middleware.challenge import FORCE_CHALLENGE_EVERY_ENV
+
+    monkeypatch.setenv(FORCE_CHALLENGE_EVERY_ENV, "2")
+    mock_logging.reset_for_tests()
+    app = create_app(_build_settings(Difficulty.HARD))
+    async with LifespanManager(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=False
+        ) as client:
+            yield client
+
+
+async def test_hard_initial_challenge_fires(hard_client_no_force: httpx.AsyncClient) -> None:
+    sid = await _start_session(hard_client_no_force)
+    response = await hard_client_no_force.get(f"/quote/{sid}/vehicle")
+    assert response.status_code == 302
+    assert response.headers["location"] == f"/challenge?next=/quote/{sid}/vehicle"
+
+
+async def test_hard_force_every_two_fires_on_second_request(
+    hard_client_force_every_two: httpx.AsyncClient,
+) -> None:
+    sid = await _start_session(hard_client_force_every_two)
+    # Solve first so the initial-clearance gate passes.
+    solve = await hard_client_force_every_two.post(
+        "/challenge/solve",
+        json={"next": f"/quote/{sid}/vehicle"},
+    )
+    assert solve.status_code == 200
+    # The two GETs below land in the gated path and the env override fires
+    # on the second one.
+    first = await hard_client_force_every_two.get(f"/quote/{sid}/vehicle")
+    second = await hard_client_force_every_two.get(f"/quote/{sid}/vehicle")
+    assert first.status_code == 200, first.text
+    assert second.status_code == 302
+    assert second.headers["location"] == f"/challenge?next=/quote/{sid}/vehicle"
+
+
+async def test_intermittent_prob_in_range_default_seed(
+    hard_client_no_force: httpx.AsyncClient,
+) -> None:
+    app = hard_client_no_force._transport.app  # type: ignore[attr-defined]
+    prob = app.state.intermittent_challenge_prob
+    assert 0.10 <= prob <= 0.30
+
+
+async def test_hard_clearance_cleared_after_intermittent(
+    hard_client_force_every_two: httpx.AsyncClient,
+) -> None:
+    sid = await _start_session(hard_client_force_every_two)
+    solve = await hard_client_force_every_two.post(
+        "/challenge/solve",
+        json={"next": f"/quote/{sid}/vehicle"},
+    )
+    assert solve.status_code == 200
+    # First request - clearance accepted.
+    _ = await hard_client_force_every_two.get(f"/quote/{sid}/vehicle")
+    # Second request - intermittent fires; cookie should be cleared.
+    second = await hard_client_force_every_two.get(f"/quote/{sid}/vehicle")
+    assert second.status_code == 302
+    assert hard_client_force_every_two.cookies.get(CLEARANCE_COOKIE) is None
+    # Subsequent requests redirect until re-solve.
+    third = await hard_client_force_every_two.get(f"/quote/{sid}/vehicle")
+    assert third.status_code == 302
+
+
+async def test_force_challenge_every_reads_env_per_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from kestrel.mock_site.middleware.challenge import FORCE_CHALLENGE_EVERY_ENV
+
+    monkeypatch.delenv(FORCE_CHALLENGE_EVERY_ENV, raising=False)
+    mock_logging.reset_for_tests()
+    app = create_app(_build_settings(Difficulty.HARD))
+    async with LifespanManager(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=False
+        ) as client:
+            sid = await _start_session(client)
+            solve = await client.post("/challenge/solve", json={"next": f"/quote/{sid}/vehicle"})
+            assert solve.status_code == 200
+            # No env set initially - the per-session RNG drives the roll. Set
+            # the override after solve and confirm the next gated request fires.
+            monkeypatch.setenv(FORCE_CHALLENGE_EVERY_ENV, "1")
+            response = await client.get(f"/quote/{sid}/vehicle")
+            assert response.status_code == 302
