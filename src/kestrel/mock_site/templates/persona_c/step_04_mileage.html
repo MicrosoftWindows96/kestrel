@@ -1,0 +1,22 @@
+<div data-test-step="mileage" hx-target="this" hx-swap="outerHTML" class="minimal">
+  <form hx-post="/quote/{{ sid }}/mileage" hx-target="closest [data-test-step]" hx-swap="outerHTML">
+    <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+    <label>Annual mileage
+      <input name="annual_mileage" type="text"
+             value="{{ field_values.annual_mileage or '' }}"
+             data-test-field-annual_mileage>
+      {% if errors.annual_mileage %}<span data-tooltip-error data-test-error-annual_mileage>{{ errors.annual_mileage }}</span>{% endif %}
+    </label>
+    <label>Business use
+      <select name="business_use" data-test-field-business_use>
+        <option value=""></option>
+        <option value="none">None</option>
+        <option value="class_1">Class 1</option>
+        <option value="class_2">Class 2</option>
+        <option value="class_3">Class 3</option>
+      </select>
+      {% if errors.business_use %}<span data-tooltip-error data-test-error-business_use>{{ errors.business_use }}</span>{% endif %}
+    </label>
+    <button data-test-submit hx-post="/quote/{{ sid }}/mileage">Continue</button>
+  </form>
+</div>

@@ -1,0 +1,57 @@
+<div data-test-step="driver-1" hx-target="this" hx-swap="outerHTML" class="minimal">
+  <form hx-post="/quote/{{ sid }}/driver-1" hx-target="closest [data-test-step]" hx-swap="outerHTML">
+    <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+    <label>Forename
+      <input name="driver_1_forename" type="text"
+             value="{{ field_values.driver_1_forename or '' }}"
+             data-test-field-driver_1_forename>
+      {% if errors.driver_1_forename %}<span data-tooltip-error data-test-error-driver_1_forename>{{ errors.driver_1_forename }}</span>{% endif %}
+    </label>
+    <label>Surname
+      <input name="driver_1_surname" type="text"
+             value="{{ field_values.driver_1_surname or '' }}"
+             data-test-field-driver_1_surname>
+      {% if errors.driver_1_surname %}<span data-tooltip-error data-test-error-driver_1_surname>{{ errors.driver_1_surname }}</span>{% endif %}
+    </label>
+    <label>Date of birth
+      <input name="driver_1_dob" type="text" placeholder="YYYY-MM-DD"
+             value="{{ field_values.driver_1_dob or '' }}"
+             data-test-field-driver_1_dob>
+      {% if errors.driver_1_dob %}<span data-tooltip-error data-test-error-driver_1_dob>{{ errors.driver_1_dob }}</span>{% endif %}
+    </label>
+    <label>Licence type
+      <select name="driver_1_licence_type" data-test-field-driver_1_licence_type>
+        <option value=""></option>
+        <option value="full_uk">Full UK</option>
+        <option value="provisional_uk">Provisional UK</option>
+        <option value="full_eu">Full EU</option>
+        <option value="other">Other</option>
+      </select>
+      {% if errors.driver_1_licence_type %}<span data-tooltip-error data-test-error-driver_1_licence_type>{{ errors.driver_1_licence_type }}</span>{% endif %}
+    </label>
+    <label>Licence held since
+      <input name="driver_1_licence_held_since" type="text" placeholder="YYYY-MM-DD"
+             value="{{ field_values.driver_1_licence_held_since or '' }}"
+             data-test-field-driver_1_licence_held_since>
+      {% if errors.driver_1_licence_held_since %}<span data-tooltip-error data-test-error-driver_1_licence_held_since>{{ errors.driver_1_licence_held_since }}</span>{% endif %}
+    </label>
+    <label>Occupation
+      <input name="driver_1_occupation" type="text"
+             value="{{ field_values.driver_1_occupation or '' }}"
+             data-test-field-driver_1_occupation>
+      {% if errors.driver_1_occupation %}<span data-tooltip-error data-test-error-driver_1_occupation>{{ errors.driver_1_occupation }}</span>{% endif %}
+    </label>
+    <label>Employment
+      <select name="driver_1_employment" data-test-field-driver_1_employment>
+        <option value=""></option>
+        <option value="employed">Employed</option>
+        <option value="self_employed">Self employed</option>
+        <option value="unemployed">Unemployed</option>
+        <option value="retired">Retired</option>
+        <option value="student">Student</option>
+      </select>
+      {% if errors.driver_1_employment %}<span data-tooltip-error data-test-error-driver_1_employment>{{ errors.driver_1_employment }}</span>{% endif %}
+    </label>
+    <button data-test-submit hx-post="/quote/{{ sid }}/driver-1">Continue</button>
+  </form>
+</div>

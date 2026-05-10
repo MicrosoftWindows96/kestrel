@@ -474,3 +474,195 @@ async def test_persona_b_csrf_input_present_in_hard_render(
     value = csrf_input.get("value")
     assert isinstance(value, str), "HARD must render a string CSRF value"
     assert value, "HARD must render non-empty CSRF value"
+
+
+# -- persona_c axes (section 10) ----------------------------------------------
+
+
+@pytest_asyncio.fixture
+async def persona_c_easy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> AsyncIterator[tuple[httpx.AsyncClient, FastAPI]]:
+    monkeypatch.delenv(FORCE_CHALLENGE_EVERY_ENV, raising=False)
+    client, app, manager = await _client_for(Difficulty.EASY, Persona.C)
+    try:
+        yield client, app
+    finally:
+        await client.aclose()
+        await manager.__aexit__(None, None, None)
+
+
+@pytest_asyncio.fixture
+async def persona_c_medium(
+    monkeypatch: pytest.MonkeyPatch,
+) -> AsyncIterator[tuple[httpx.AsyncClient, FastAPI]]:
+    monkeypatch.delenv(FORCE_CHALLENGE_EVERY_ENV, raising=False)
+    client, app, manager = await _client_for(Difficulty.MEDIUM, Persona.C)
+    try:
+        yield client, app
+    finally:
+        await client.aclose()
+        await manager.__aexit__(None, None, None)
+
+
+@pytest_asyncio.fixture
+async def persona_c_hard(
+    monkeypatch: pytest.MonkeyPatch,
+) -> AsyncIterator[tuple[httpx.AsyncClient, FastAPI]]:
+    monkeypatch.delenv(FORCE_CHALLENGE_EVERY_ENV, raising=False)
+    client, app, manager = await _client_for(Difficulty.HARD, Persona.C)
+    try:
+        yield client, app
+    finally:
+        await client.aclose()
+        await manager.__aexit__(None, None, None)
+
+
+async def test_persona_c_medium_container_is_div_with_hx_target(
+    persona_c_medium: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_medium
+    sid = await _start_with_clearance(client)
+    response = await client.get(f"/quote/{sid}/vehicle")
+    assert response.status_code == 200
+    soup = BeautifulSoup(response.text, "html.parser")
+    container = soup.find(attrs={"data-test-step": "vehicle"})
+    assert container is not None
+    assert isinstance(container, Tag)
+    assert container.name == "div"
+    assert container.get("hx-target") is not None
+    assert "minimal" in container.get("class", [])
+
+
+async def test_persona_c_easy_container_is_form(
+    persona_c_easy: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_easy
+    sid = await _start_with_clearance(client)
+    response = await client.get(f"/quote/{sid}/vehicle")
+    soup = BeautifulSoup(response.text, "html.parser")
+    container = soup.find(attrs={"data-test-step": "vehicle"})
+    assert container is not None
+    assert isinstance(container, Tag)
+    assert container.name == "form"
+    assert "minimal" in container.get("class", [])
+
+
+async def test_persona_c_hard_response_carries_hx_reswap(
+    persona_c_hard: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_hard
+    sid = await _start_with_clearance(client)
+    response = await client.get(f"/quote/{sid}/vehicle")
+    assert response.headers.get("hx-reswap") == "outerHTML"
+
+
+async def test_persona_c_easy_response_has_no_hx_reswap(
+    persona_c_easy: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_easy
+    sid = await _start_with_clearance(client)
+    response = await client.get(f"/quote/{sid}/vehicle")
+    assert "hx-reswap" not in {k.lower() for k in response.headers}
+
+
+async def test_persona_c_fields_have_no_id_attribute(
+    persona_c_medium: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_medium
+    sid = await _start_with_clearance(client)
+    response = await client.get(f"/quote/{sid}/vehicle")
+    soup = BeautifulSoup(response.text, "html.parser")
+    for name in ("vehicle_make", "vehicle_model", "vehicle_year"):
+        el = soup.find(attrs={"name": name})
+        assert el is not None
+        assert isinstance(el, Tag)
+        assert "id" not in el.attrs, f"persona_c must not emit id on {name}"
+
+
+async def test_persona_c_error_placement_is_tooltip_span(
+    persona_c_medium: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_medium
+    sid = await _start_with_clearance(client)
+    response = await client.post(f"/quote/{sid}/vehicle", data={})
+    assert response.status_code == 200
+    soup = BeautifulSoup(response.text, "html.parser")
+    spans = soup.find_all("span", attrs={"data-tooltip-error": True})
+    assert spans, "persona_c errors must render via tooltip spans"
+    for span in spans:
+        attrs_set = set(span.attrs.keys())
+        # Each tooltip carries a data-test-error-<field> selector for tests.
+        assert any(k.startswith("data-test-error-") for k in attrs_set), span.attrs
+
+
+async def test_persona_c_form_error_on_medium_carries_hx_reswap(
+    persona_c_medium: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_medium
+    sid = await _start_with_clearance(client)
+    response = await client.post(f"/quote/{sid}/vehicle", data={})
+    assert response.status_code == 200
+    assert response.headers.get("hx-reswap") == "outerHTML"
+
+
+async def test_persona_c_easy_uses_easy_template_overlay(
+    persona_c_easy: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    """EASY persona_c serves the no-JS overlay (`<form>` not `<div>`)."""
+    client, _app = persona_c_easy
+    sid = await _start_with_clearance(client)
+    for step in ("vehicle", "parking", "address"):
+        response = await client.get(f"/quote/{sid}/{step}?back=1")
+        assert response.status_code == 200, f"{step}: {response.text}"
+        soup = BeautifulSoup(response.text, "html.parser")
+        scripts = soup.find_all("script")
+        assert scripts == [], f"{step}: EASY persona_c rendered <script>"
+        container = soup.find(attrs={"data-test-step": step})
+        assert container is not None
+        assert isinstance(container, Tag)
+        assert container.name == "form"
+
+
+async def test_persona_c_quote_total_markup_is_output_element(
+    persona_c_easy: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_easy
+    sid = await _start_with_clearance(client)
+    await _drive_through_steps(client, sid)
+    response = await client.post(f"/quote/{sid}/submit")
+    assert response.status_code == 200, response.text
+    soup = BeautifulSoup(response.text, "html.parser")
+    total = soup.find("output", attrs={"data-test-quote-total": True})
+    assert total is not None
+    assert isinstance(total, Tag)
+    text = total.get_text(strip=True)
+    assert text.endswith("GBP"), text
+    # Persona_c currency: 1,234.56 GBP - thousands separator + suffix.
+    assert "," in text or float(text.replace(" GBP", "").replace(",", "")) < 1000, text
+    assert total.get("data-premium") is not None
+
+
+async def test_persona_c_full_easy_happy_path(
+    persona_c_easy: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    client, _app = persona_c_easy
+    sid = await _start_with_clearance(client)
+    await _drive_through_steps(client, sid)
+    submit = await client.post(f"/quote/{sid}/submit")
+    assert submit.status_code == 200, submit.text
+    assert "data-test-quote-total" in submit.text
+
+
+async def test_malformed_sid_returns_400(
+    persona_c_easy: tuple[httpx.AsyncClient, FastAPI],
+) -> None:
+    """Re-locks the contract previously asserted by test_htmx_negotiation.
+
+    EASY mode skips the challenge gate so the request reaches the route
+    handler where `_validate_sid_format` rejects the malformed sid with
+    a 400 before any state lookup.
+    """
+    client, _app = persona_c_easy
+    response = await client.get("/quote/short/vehicle")
+    assert response.status_code == 400

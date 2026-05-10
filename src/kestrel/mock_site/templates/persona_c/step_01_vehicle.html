@@ -1,33 +1,48 @@
-{# persona_c htmx fragment for vehicle step. Section 06 expands. #}
 <div data-test-step="vehicle" hx-target="this" hx-swap="outerHTML" class="minimal">
-  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
-  <label>Make
-    <input name="vehicle_make" type="text" data-test-field-vehicle_make>
-  </label>
-  <label>Model
-    <input name="vehicle_model" type="text" data-test-field-vehicle_model>
-  </label>
-  <label>Year
-    <input name="vehicle_year" type="text" data-test-field-vehicle_year>
-  </label>
-  <label>Value
-    <input name="vehicle_value" type="text" data-test-field-vehicle_value>
-  </label>
-  <label>Fuel
-    <select name="vehicle_fuel" data-test-field-vehicle_fuel>
-      <option value=""></option>
-      <option value="petrol">Petrol</option>
-      <option value="diesel">Diesel</option>
-      <option value="hybrid">Hybrid</option>
-      <option value="electric">Electric</option>
-    </select>
-  </label>
-  <label>Transmission
-    <select name="vehicle_transmission" data-test-field-vehicle_transmission>
-      <option value=""></option>
-      <option value="manual">Manual</option>
-      <option value="automatic">Automatic</option>
-    </select>
-  </label>
-  <button data-test-submit hx-post="/quote/{{ sid }}/vehicle">Continue</button>
+  <form hx-post="/quote/{{ sid }}/vehicle" hx-target="closest [data-test-step]" hx-swap="outerHTML">
+    <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+    <label>Make
+      <input name="vehicle_make" type="text"
+             value="{{ field_values.vehicle_make or '' }}"
+             data-test-field-vehicle_make>
+      {% if errors.vehicle_make %}<span data-tooltip-error data-test-error-vehicle_make>{{ errors.vehicle_make }}</span>{% endif %}
+    </label>
+    <label>Model
+      <input name="vehicle_model" type="text"
+             value="{{ field_values.vehicle_model or '' }}"
+             data-test-field-vehicle_model>
+      {% if errors.vehicle_model %}<span data-tooltip-error data-test-error-vehicle_model>{{ errors.vehicle_model }}</span>{% endif %}
+    </label>
+    <label>Year
+      <input name="vehicle_year" type="text"
+             value="{{ field_values.vehicle_year or '' }}"
+             data-test-field-vehicle_year>
+      {% if errors.vehicle_year %}<span data-tooltip-error data-test-error-vehicle_year>{{ errors.vehicle_year }}</span>{% endif %}
+    </label>
+    <label>Value
+      <input name="vehicle_value" type="text"
+             value="{{ field_values.vehicle_value or '' }}"
+             data-test-field-vehicle_value>
+      {% if errors.vehicle_value %}<span data-tooltip-error data-test-error-vehicle_value>{{ errors.vehicle_value }}</span>{% endif %}
+    </label>
+    <label>Fuel
+      <select name="vehicle_fuel" data-test-field-vehicle_fuel>
+        <option value=""></option>
+        <option value="petrol" {% if field_values.vehicle_fuel == 'petrol' %}selected{% endif %}>Petrol</option>
+        <option value="diesel" {% if field_values.vehicle_fuel == 'diesel' %}selected{% endif %}>Diesel</option>
+        <option value="hybrid" {% if field_values.vehicle_fuel == 'hybrid' %}selected{% endif %}>Hybrid</option>
+        <option value="electric" {% if field_values.vehicle_fuel == 'electric' %}selected{% endif %}>Electric</option>
+      </select>
+      {% if errors.vehicle_fuel %}<span data-tooltip-error data-test-error-vehicle_fuel>{{ errors.vehicle_fuel }}</span>{% endif %}
+    </label>
+    <label>Transmission
+      <select name="vehicle_transmission" data-test-field-vehicle_transmission>
+        <option value=""></option>
+        <option value="manual" {% if field_values.vehicle_transmission == 'manual' %}selected{% endif %}>Manual</option>
+        <option value="automatic" {% if field_values.vehicle_transmission == 'automatic' %}selected{% endif %}>Automatic</option>
+      </select>
+      {% if errors.vehicle_transmission %}<span data-tooltip-error data-test-error-vehicle_transmission>{{ errors.vehicle_transmission }}</span>{% endif %}
+    </label>
+    <button data-test-submit hx-post="/quote/{{ sid }}/vehicle">Continue</button>
+  </form>
 </div>

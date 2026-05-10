@@ -1,0 +1,14 @@
+<form data-test-step="driver-1-history" class="minimal" method="post" action="/quote/{{ sid }}/driver-1-history">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <label>Claims (JSON)
+    <textarea name="driver_1_claims" rows="4" placeholder="[]"
+              data-test-field-driver_1_claims>{{ field_values.driver_1_claims or '' }}</textarea>
+    {% if errors.driver_1_claims %}<span data-tooltip-error data-test-error-driver_1_claims>{{ errors.driver_1_claims }}</span>{% endif %}
+  </label>
+  <label>Convictions (JSON)
+    <textarea name="driver_1_convictions" rows="4" placeholder="[]"
+              data-test-field-driver_1_convictions>{{ field_values.driver_1_convictions or '' }}</textarea>
+    {% if errors.driver_1_convictions %}<span data-tooltip-error data-test-error-driver_1_convictions>{{ errors.driver_1_convictions }}</span>{% endif %}
+  </label>
+  <button data-test-submit type="submit">Continue</button>
+</form>

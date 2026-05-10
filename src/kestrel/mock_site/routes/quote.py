@@ -265,11 +265,6 @@ async def get_step(
 ) -> Response:
     _validate_sid_format(sid)
     _validate_step_slug(step)
-    settings = request.app.state.settings
-
-    if settings.persona is Persona.C:
-        return _persona_c_get_step(request, sid, step, settings.difficulty)
-
     _verify_sid_cookie_match(request, sid)
     state = await _load_or_404(store, sid)
     pointer_index = _logical_pointer(state)
@@ -474,14 +469,33 @@ def _render_step(
         "difficulty": settings.difficulty.value,
         "persona_css": persona_spec.css_filename,
     }
+    headers = _persona_c_response_headers(settings.persona, settings.difficulty)
     response: HTMLResponse = templates.TemplateResponse(
         request,
         STEP_TO_TEMPLATE[step],
         context,
         status_code=status_code,
+        headers=headers,
     )
     csrf_service.set_cookie(response, csrf_token)
     return response
+
+
+def _persona_c_response_headers(
+    persona: Persona, difficulty: Difficulty
+) -> dict[str, str] | None:
+    """Persona_c on MEDIUM/HARD always responds as an htmx fragment swap.
+
+    The renderer for persona_c emits a bare `<div data-test-step>` block
+    (no `<html>` envelope), so htmx clients receive a clean fragment
+    that the browser substitutes for the targeted element. EASY skips
+    the header because the `_easy.html` overlay is a full-page form.
+    """
+    if persona is not Persona.C:
+        return None
+    if difficulty is Difficulty.EASY:
+        return None
+    return {HX_RESWAP_HEADER: HX_RESWAP_VALUE}
 
 
 def _logical_pointer(state: FormState) -> int:
@@ -513,6 +527,7 @@ def _all_steps_complete(state: FormState) -> bool:
 
 def _render_quote_result(request: Request, sid: str, state: FormState) -> HTMLResponse:
     persona_spec = request.app.state.persona_spec
+    settings = request.app.state.settings
     quote_spec = PersonaQuoteSpec(
         premium_seed_offset=persona_spec.premium_seed_offset,
         addon_catalog=persona_spec.addon_catalog,
@@ -521,19 +536,28 @@ def _render_quote_result(request: Request, sid: str, state: FormState) -> HTMLRe
     templates = request.app.state.templates
     csrf_service = request.app.state.csrf_service
     csrf_token = csrf_service.mint(request)
+    addon_lines = [
+        {
+            "name": addon.name,
+            "label": addon.name.replace("_", " "),
+            "price": addon.price,
+            "price_str": _format_currency(addon.price, settings.persona),
+        }
+        for addon in premium.addons
+    ]
+    headers = _persona_c_response_headers(settings.persona, settings.difficulty)
     response: HTMLResponse = templates.TemplateResponse(
         request,
         "quote_result.html",
         {
             "sid": sid,
             "csrf_token": csrf_token,
-            "premium_total": _format_currency(premium.total, request.app.state.settings.persona),
-            "addons": [
-                {"name": addon.name, "label": addon.name.replace("_", " "), "price": addon.price}
-                for addon in premium.addons
-            ],
+            "premium_total": _format_currency(premium.total, settings.persona),
+            "premium_total_raw": str(premium.total),
+            "addons": addon_lines,
             "persona_css": persona_spec.css_filename,
         },
+        headers=headers,
     )
     csrf_service.set_cookie(response, csrf_token)
     return response
@@ -563,29 +587,6 @@ def _emit_state_transition(
         step_name=step_name,
         field_names=tuple(sorted(field_names)),
     )
-
-
-def _persona_c_get_step(
-    request: Request, sid: str, step: str, difficulty: Difficulty
-) -> HTMLResponse:
-    """Backwards-compatible persona_c GET handler from section 03 prototype.
-
-    Section 10 replaces this with the full persona_c surface. Until then the
-    prototype contract (htmx fragment on MEDIUM/HARD, full-page on EASY) must
-    keep test_htmx_negotiation green.
-    """
-    if step != "vehicle":
-        raise HTTPException(status_code=404, detail="route deferred to section 10")
-
-    templates = request.app.state.templates
-    headers = {HX_RESWAP_HEADER: HX_RESWAP_VALUE} if difficulty is not Difficulty.EASY else None
-    response: HTMLResponse = templates.TemplateResponse(
-        request,
-        "step_01_vehicle.html",
-        {"sid": sid, "csrf_token": ""},
-        headers=headers,
-    )
-    return response
 
 
 __all__ = ["router"]

@@ -1,0 +1,5 @@
+<form data-test-step="review" class="minimal" method="post" action="/quote/{{ sid }}/review">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <p>Confirm to see your quote.</p>
+  <button data-test-submit type="submit">See my quote</button>
+</form>

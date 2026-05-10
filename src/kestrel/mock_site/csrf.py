@@ -139,7 +139,10 @@ class CsrfService:
 
 def _mint_token(sid: str, secret: bytes, *, now: int | None = None) -> str:
     sid_bytes = sid.encode("utf-8")
-    ts = now if now is not None else int(time.time())
+    # ns resolution avoids token collisions when two renders happen inside the
+    # same wallclock second; CSRF tokens have no expiry check so the field is
+    # purely a freshness nonce.
+    ts = now if now is not None else time.time_ns()
     payload = struct.pack(">I", len(sid_bytes)) + sid_bytes + struct.pack(">Q", ts)
     digest = hmac.new(secret, payload, hashlib.sha256).digest()
     raw = payload + digest

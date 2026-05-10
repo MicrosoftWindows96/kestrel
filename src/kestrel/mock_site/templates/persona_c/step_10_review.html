@@ -1,0 +1,7 @@
+<div data-test-step="review" hx-target="this" hx-swap="outerHTML" class="minimal">
+  <form hx-post="/quote/{{ sid }}/review" hx-target="closest [data-test-step]" hx-swap="outerHTML">
+    <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+    <p>Confirm the details to see your quote.</p>
+    <button data-test-submit hx-post="/quote/{{ sid }}/review">See my quote</button>
+  </form>
+</div>

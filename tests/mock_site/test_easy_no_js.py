@@ -76,19 +76,36 @@ async def persona_b_easy() -> AsyncIterator[httpx.AsyncClient]:
             yield client
 
 
+@pytest_asyncio.fixture
+async def persona_c_easy() -> AsyncIterator[httpx.AsyncClient]:
+    mock_logging.reset_for_tests()
+    app = create_app(_settings(Persona.C))
+    async with LifespanManager(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=False
+        ) as client:
+            yield client
+
+
 async def _start_session(client: httpx.AsyncClient) -> str:
     response = await client.get("/quote/start")
     assert response.status_code == 302
     return response.headers["location"].split("/")[2]
 
 
-@pytest.mark.parametrize("persona", ["persona_a", "persona_b"])
+@pytest.mark.parametrize("persona", ["persona_a", "persona_b", "persona_c"])
 async def test_easy_renders_no_script_tags(
     persona_a_easy: httpx.AsyncClient,
     persona_b_easy: httpx.AsyncClient,
+    persona_c_easy: httpx.AsyncClient,
     persona: str,
 ) -> None:
-    client = persona_a_easy if persona == "persona_a" else persona_b_easy
+    client = {
+        "persona_a": persona_a_easy,
+        "persona_b": persona_b_easy,
+        "persona_c": persona_c_easy,
+    }[persona]
     sid = await _start_session(client)
     for step in _STEPS:
         response = await client.get(f"/quote/{sid}/{step}?back=1")
@@ -96,3 +113,23 @@ async def test_easy_renders_no_script_tags(
         soup = BeautifulSoup(response.text, "html.parser")
         scripts = soup.find_all("script")
         assert scripts == [], f"{persona}/{step} rendered <script> in EASY"
+
+
+def test_persona_c_easy_template_files_have_no_htmx_reference() -> None:
+    """Per spec: persona_c EASY templates must not reference htmx.min.js."""
+    from pathlib import Path
+
+    easy_dir = (
+        Path(__file__).resolve().parent.parent.parent
+        / "src"
+        / "kestrel"
+        / "mock_site"
+        / "templates"
+        / "persona_c"
+        / "easy"
+    )
+    assert easy_dir.is_dir(), easy_dir
+    for path in easy_dir.glob("*.html"):
+        text = path.read_text(encoding="utf-8")
+        assert "htmx" not in text.lower(), f"{path.name} references htmx"
+        assert "<script" not in text.lower(), f"{path.name} has <script>"
