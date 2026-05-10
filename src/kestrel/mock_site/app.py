@@ -20,10 +20,10 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 
-from kestrel.mock_site.config import Persona, Settings
+from kestrel.mock_site.config import Difficulty, Persona, Settings
 from kestrel.mock_site.logging import configure_logging
 from kestrel.mock_site.middleware.request_logger import RequestLoggerMiddleware
-from kestrel.mock_site.routes import health
+from kestrel.mock_site.routes import health, quote
 from kestrel.mock_site.routes.static import mount_static
 
 INTERMITTENT_PROB_LOW = 0.10
@@ -117,16 +117,22 @@ def _draw_intermittent_prob(seed: int) -> float:
     return rng.uniform(INTERMITTENT_PROB_LOW, INTERMITTENT_PROB_HIGH)
 
 
-def _build_templates(_settings: Settings) -> Jinja2Templates:
-    """Return a Jinja2Templates rooted at the package templates dir.
+def _build_templates(settings: Settings) -> Jinja2Templates:
+    """Return a Jinja2Templates rooted at the active persona's directory.
 
-    The directory tree is part of the source distribution (committed
-    placeholders per persona). Section 02 vendors persona-specific
-    templates beneath this root. The factory does NOT mkdir at runtime
-    because the package install location may be read-only.
+    Plan section 9 step 7 wires `templates/{persona.value}/` as the root,
+    with a `templates/{persona.value}/easy/` overlay search-path-first when
+    persona_c serves under EASY (per §25 axis "template_dir_easy"). The
+    factory never mkdirs at runtime because the package install location
+    may be read-only.
     """
     template_root = Path(__file__).resolve().parent / "templates"
-    return Jinja2Templates(directory=str(template_root))
+    persona_dir = template_root / settings.persona.value
+    if settings.persona is Persona.C and settings.difficulty is Difficulty.EASY:
+        directories = [str(persona_dir / "easy"), str(persona_dir)]
+    else:
+        directories = [str(persona_dir)]
+    return Jinja2Templates(directory=directories)
 
 
 def _register_middleware(app: FastAPI) -> None:
@@ -135,6 +141,7 @@ def _register_middleware(app: FastAPI) -> None:
 
 def _register_routers(app: FastAPI) -> None:
     app.include_router(health.router)
+    app.include_router(quote.router)
 
 
 def _make_lifespan() -> Any:

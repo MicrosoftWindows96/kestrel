@@ -1,0 +1,33 @@
+{# persona_c EASY fallback. No htmx, no scripts. #}
+<form data-test-step="vehicle" class="minimal" method="post" action="/quote/{{ sid }}/vehicle">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  <label>Make
+    <input name="vehicle_make" type="text" data-test-field-vehicle_make>
+  </label>
+  <label>Model
+    <input name="vehicle_model" type="text" data-test-field-vehicle_model>
+  </label>
+  <label>Year
+    <input name="vehicle_year" type="text" data-test-field-vehicle_year>
+  </label>
+  <label>Value
+    <input name="vehicle_value" type="text" data-test-field-vehicle_value>
+  </label>
+  <label>Fuel
+    <select name="vehicle_fuel" data-test-field-vehicle_fuel>
+      <option value=""></option>
+      <option value="petrol">Petrol</option>
+      <option value="diesel">Diesel</option>
+      <option value="hybrid">Hybrid</option>
+      <option value="electric">Electric</option>
+    </select>
+  </label>
+  <label>Transmission
+    <select name="vehicle_transmission" data-test-field-vehicle_transmission>
+      <option value=""></option>
+      <option value="manual">Manual</option>
+      <option value="automatic">Automatic</option>
+    </select>
+  </label>
+  <button data-test-submit type="submit">Continue</button>
+</form>
