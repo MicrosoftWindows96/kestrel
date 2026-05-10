@@ -26,8 +26,10 @@ from fastapi.templating import Jinja2Templates
 from kestrel.mock_site.config import Difficulty, Persona, Settings
 from kestrel.mock_site.csrf import CsrfService
 from kestrel.mock_site.logging import configure_logging
+from kestrel.mock_site.middleware.challenge import ChallengeMiddleware
+from kestrel.mock_site.middleware.latency import LatencyMiddleware
 from kestrel.mock_site.middleware.request_logger import RequestLoggerMiddleware
-from kestrel.mock_site.routes import health, quote
+from kestrel.mock_site.routes import challenge, health, quote
 from kestrel.mock_site.routes.static import mount_static
 from kestrel.mock_site.state import SessionStore, make_session_store, run_janitor
 
@@ -91,7 +93,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.templates = _build_templates(settings)
 
     mount_static(app)
-    _register_middleware(app)
+    _register_middleware(app, settings)
     _register_routers(app)
     return app
 
@@ -133,13 +135,20 @@ def _build_templates(settings: Settings) -> Jinja2Templates:
     return Jinja2Templates(directory=directories)
 
 
-def _register_middleware(app: FastAPI) -> None:
+def _register_middleware(app: FastAPI, settings: Settings) -> None:
+    # Starlette wraps middlewares in reverse-registration order, so the
+    # last `add_middleware` call is the outermost layer at request time.
+    # Section 11 keeps RequestLoggerMiddleware as the outermost layer so
+    # it observes status, duration, and request_id for every leg.
+    app.add_middleware(ChallengeMiddleware)
+    app.add_middleware(LatencyMiddleware, settings=settings)
     app.add_middleware(RequestLoggerMiddleware)
 
 
 def _register_routers(app: FastAPI) -> None:
     app.include_router(health.router)
     app.include_router(quote.router)
+    app.include_router(challenge.router)
 
 
 def _make_lifespan(store: SessionStore, interval_seconds: float) -> Callable[[FastAPI], Any]:

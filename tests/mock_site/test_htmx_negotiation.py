@@ -17,8 +17,22 @@ from fastapi import FastAPI
 from kestrel.mock_site import logging as mock_logging
 from kestrel.mock_site.app import create_app
 from kestrel.mock_site.config import Difficulty, Persona, Settings
+from kestrel.mock_site.routes.challenge import CLEARANCE_COOKIE, mint_token
 
 VALID_SID = "A" * 43
+TEST_SECRET = b"test" * 8
+
+
+def _clearance_headers(sid: str) -> dict[str, str]:
+    """Return a Cookie header so MEDIUM/HARD bypass the challenge gate.
+
+    The htmx prototype tests pre-date the challenge middleware and assert
+    handler-only behavior. Sending the cookie via the Cookie header is
+    more robust than seeding the client jar because httpx's cookielib
+    backend rejects single-label domains like the test base url's
+    ``test`` host. Per-request ``cookies=`` is also deprecated.
+    """
+    return {"Cookie": f"{CLEARANCE_COOKIE}={mint_token(sid, TEST_SECRET)}"}
 
 
 def _settings(difficulty: Difficulty) -> Settings:
@@ -95,7 +109,9 @@ async def test_easy_returns_full_page_no_htmx(
 async def test_medium_returns_htmx_fragment(
     client_persona_c_medium: httpx.AsyncClient,
 ) -> None:
-    response = await client_persona_c_medium.get(f"/quote/{VALID_SID}/vehicle")
+    response = await client_persona_c_medium.get(
+        f"/quote/{VALID_SID}/vehicle", headers=_clearance_headers(VALID_SID)
+    )
     assert response.status_code == 200
     body = response.text
     assert 'data-test-step="vehicle"' in body
@@ -106,7 +122,9 @@ async def test_medium_returns_htmx_fragment(
 async def test_hard_returns_htmx_fragment(
     client_persona_c_hard: httpx.AsyncClient,
 ) -> None:
-    response = await client_persona_c_hard.get(f"/quote/{VALID_SID}/vehicle")
+    response = await client_persona_c_hard.get(
+        f"/quote/{VALID_SID}/vehicle", headers=_clearance_headers(VALID_SID)
+    )
     assert response.status_code == 200
     body = response.text
     assert 'data-test-step="vehicle"' in body
@@ -117,7 +135,9 @@ async def test_hard_returns_htmx_fragment(
 async def test_htmx_fragment_has_content_length_header(
     client_persona_c_medium: httpx.AsyncClient,
 ) -> None:
-    response = await client_persona_c_medium.get(f"/quote/{VALID_SID}/vehicle")
+    response = await client_persona_c_medium.get(
+        f"/quote/{VALID_SID}/vehicle", headers=_clearance_headers(VALID_SID)
+    )
     headers_lower = {key.lower() for key in response.headers}
     assert "content-length" in headers_lower
     assert "transfer-encoding" not in headers_lower
@@ -126,7 +146,9 @@ async def test_htmx_fragment_has_content_length_header(
 async def test_htmx_fragment_has_hx_reswap_outerhtml(
     client_persona_c_medium: httpx.AsyncClient,
 ) -> None:
-    response = await client_persona_c_medium.get(f"/quote/{VALID_SID}/vehicle")
+    response = await client_persona_c_medium.get(
+        f"/quote/{VALID_SID}/vehicle", headers=_clearance_headers(VALID_SID)
+    )
     assert response.headers.get("hx-reswap") == "outerHTML"
 
 
@@ -142,14 +164,18 @@ async def test_easy_fallback_no_htmx_min_js_reference(
 async def test_data_test_step_vehicle_present(
     client_persona_c_medium: httpx.AsyncClient,
 ) -> None:
-    response = await client_persona_c_medium.get(f"/quote/{VALID_SID}/vehicle")
+    response = await client_persona_c_medium.get(
+        f"/quote/{VALID_SID}/vehicle", headers=_clearance_headers(VALID_SID)
+    )
     assert 'data-test-step="vehicle"' in response.text
 
 
 async def test_data_test_field_attrs_present(
     client_persona_c_medium: httpx.AsyncClient,
 ) -> None:
-    response = await client_persona_c_medium.get(f"/quote/{VALID_SID}/vehicle")
+    response = await client_persona_c_medium.get(
+        f"/quote/{VALID_SID}/vehicle", headers=_clearance_headers(VALID_SID)
+    )
     body = response.text
     expected_fields = (
         "vehicle_make",
@@ -172,7 +198,12 @@ async def test_data_test_field_attrs_present(
 async def test_invalid_sid_returns_400(
     client_persona_c_medium: httpx.AsyncClient,
 ) -> None:
-    response = await client_persona_c_medium.get("/quote/short/vehicle")
+    # The challenge gate keys off the path shape `/quote/<sid>/<step>`
+    # so the malformed sid still routes to the handler, which is the
+    # invariant under test.
+    response = await client_persona_c_medium.get(
+        "/quote/short/vehicle", headers=_clearance_headers("short")
+    )
     assert response.status_code == 400
 
 
@@ -194,5 +225,7 @@ async def test_other_persona_returns_404() -> None:
     async with LifespanManager(app):
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.get(f"/quote/{VALID_SID}/vehicle")
+            response = await client.get(
+                f"/quote/{VALID_SID}/vehicle", headers=_clearance_headers(VALID_SID)
+            )
             assert response.status_code == 404

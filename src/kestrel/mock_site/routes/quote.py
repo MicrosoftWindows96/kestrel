@@ -348,9 +348,7 @@ def _required_field_errors(step: str, payload: dict[str, Any]) -> dict[str, str]
     """
     required = STEP_REQUIRED_FIELDS.get(step, frozenset())
     return {
-        field: f"{field}_required"
-        for field in required
-        if payload.get(field) in (None, "", [])
+        field: f"{field}_required" for field in required if payload.get(field) in (None, "", [])
     }
 
 

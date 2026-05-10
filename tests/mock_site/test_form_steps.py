@@ -78,10 +78,37 @@ def _easy_persona_a_settings() -> Settings:
     )
 
 
+def _medium_persona_a_settings() -> Settings:
+    return Settings(
+        difficulty=Difficulty.MEDIUM,
+        persona=Persona.A,
+        host="127.0.0.1",
+        port=8000,
+        log_file=None,
+        quiet=True,
+        seed=20260510,
+        secret=b"test" * 8,
+        janitor_interval_seconds=86400,
+        intermittent_challenge_prob=0.10,
+    )
+
+
 @pytest_asyncio.fixture
 async def easy_client() -> AsyncIterator[httpx.AsyncClient]:
     mock_logging.reset_for_tests()
     app = create_app(_easy_persona_a_settings())
+    async with LifespanManager(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", follow_redirects=False
+        ) as client:
+            yield client
+
+
+@pytest_asyncio.fixture
+async def medium_client() -> AsyncIterator[httpx.AsyncClient]:
+    mock_logging.reset_for_tests()
+    app = create_app(_medium_persona_a_settings())
     async with LifespanManager(app):
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(
@@ -240,3 +267,18 @@ async def test_full_10_step_happy_path(easy_client: httpx.AsyncClient) -> None:
     body = submit.text
     assert "data-test-quote-total" in body
     assert "data-test-quote-breakdown" in body
+
+
+async def test_medium_challenge_interleave(medium_client: httpx.AsyncClient) -> None:
+    sid = await _start_session(medium_client)
+    redirect = await medium_client.get(f"/quote/{sid}/vehicle")
+    assert redirect.status_code == 302
+    assert redirect.headers["location"] == f"/challenge?next=/quote/{sid}/vehicle"
+    solve = await medium_client.post(
+        "/challenge/solve",
+        json={"next": f"/quote/{sid}/vehicle"},
+    )
+    assert solve.status_code == 200
+    landed = await medium_client.get(f"/quote/{sid}/vehicle")
+    assert landed.status_code == 200, landed.text
+    assert 'data-test-step="vehicle"' in landed.text
