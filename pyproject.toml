@@ -1,0 +1,99 @@
+[project]
+name = "kestrel"
+version = "0.1.0"
+description = "Educational research project for personal-use UK car insurance quote shopping with human-in-the-loop browser automation."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "AGPL-3.0-or-later" }
+authors = [{ name = "MicrosoftWindows96", email = "spam@zagrosi.com" }]
+keywords = ["research", "browser-automation", "uk-insurance", "educational"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Education",
+  "Topic :: Software Development :: Libraries",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/zagrosi/kestrel"
+Issues = "https://github.com/zagrosi/kestrel/issues"
+
+[project.scripts]
+kestrel = "kestrel.cli:main"
+mock-site = "kestrel.mock_site.cli:main"
+
+[project.entry-points."kestrel.adapters"]
+example = "kestrel.adapters.example:ExampleAdapter"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+  "pytest>=8",
+  "pytest-asyncio>=0.23",
+  "pytest-cov>=5",
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "pre-commit>=3.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "I", "N", "UP", "B", "S", "A",
+  "C4", "RET", "SIM", "ARG", "PT", "RUF",
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+no_implicit_reexport = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --strict-markers --strict-config"
+markers = [
+  "integration: tests that spin up the mock site",
+  "slow: tests that take more than 1 second",
+]
+
+[tool.coverage.run]
+source = ["src/kestrel"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "raise NotImplementedError",
+  "@(abc\\.)?abstractmethod",
+]
