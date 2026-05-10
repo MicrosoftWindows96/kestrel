@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}How far do you drive?{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/mileage"
+      class="legacy-form"
+      data-test-step="mileage">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>How far do you drive?</h1>
+  <div class="field-row">
+    <label>Estimated yearly miles</label>
+    {% set fid = field_ids.get('annual_mileage', '') %}
+    <input {% if fid %}id="{{ fid }}"{% endif %} name="annual_mileage" type="text"
+           value="{{ field_values.annual_mileage or '' }}"
+           data-test-field-annual_mileage>
+  </div>
+  <div class="field-row">
+    <label>Business use</label>
+    {% set fid = field_ids.get('business_use', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="business_use"
+            data-test-field-business_use>
+      <option value=""></option>
+      <option value="none">No business use</option>
+      <option value="class_1">Class 1</option>
+      <option value="class_2">Class 2</option>
+      <option value="class_3">Class 3</option>
+    </select>
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

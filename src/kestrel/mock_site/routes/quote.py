@@ -8,6 +8,8 @@ on the `vehicle` step so those tests stay green.
 
 from __future__ import annotations
 
+import hashlib
+import random
 import re
 import secrets
 from typing import Annotated, Any, Final
@@ -18,7 +20,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import ValidationError
 from starlette.datastructures import FormData
 
-from kestrel.mock_site.config import Difficulty, Persona
+from kestrel.mock_site.config import Difficulty, FieldIdStrategy, Persona
 from kestrel.mock_site.csrf import csrf_verify
 from kestrel.mock_site.fixtures.quote_compute import (
     PersonaQuoteSpec,
@@ -157,6 +159,57 @@ STEP_MODELS: Final[dict[str, type[Any]]] = {
     "cover": CoverStep,
     "review": ReviewStep,
 }
+
+# Ordered field-name lists per step, used by `_compute_field_ids` so the
+# `field_ids` context dict is template-agnostic across personas.
+STEP_FIELD_NAMES: Final[dict[str, tuple[str, ...]]] = {
+    step: tuple(STEP_MODELS[step].model_fields.keys()) for step in STEP_ORDER
+}
+
+
+def _compute_field_ids(
+    *,
+    strategy: FieldIdStrategy,
+    session_id: str,
+    step_name: str,
+    seed: int,
+    field_names: tuple[str, ...],
+) -> dict[str, str]:
+    """Return a per-field id mapping driven by ``strategy``.
+
+    - ``STABLE``: id equals the form field name (snake_case).
+    - ``RANDOM_SUFFIX``: id is ``f"{name}_{hex4}"`` where the suffix is
+      drawn from a deterministic RNG seeded on (session, step, seed) and
+      a per-step counter so the same field on the same step yields the
+      same suffix across renders. The seed string embeds ``step_name``
+      verbatim and is intentionally NOT stable across step renames; the
+      mock site has no persistence so this is acceptable.
+    - ``MIXED``: deterministic per-name decision drawn from a sha256 of
+      the field name; even hash -> stable id, odd hash -> suffixed. For
+      single-field steps this collapses to one bucket (always stable or
+      always suffixed) - the divergence intent only applies meaningfully
+      to multi-field steps.
+    - ``DATA_TEST_ONLY``: empty string (template branch omits ``id=``).
+    """
+    if strategy is FieldIdStrategy.STABLE:
+        return {name: name for name in field_names}
+    if strategy is FieldIdStrategy.DATA_TEST_ONLY:
+        return dict.fromkeys(field_names, "")
+    if strategy is FieldIdStrategy.RANDOM_SUFFIX:
+        rng = random.Random(f"{session_id}|{step_name}|{seed}")  # noqa: S311
+        return {name: f"{name}_{rng.randrange(16**4):04x}" for name in field_names}
+    # MIXED: per-name parity on sha256 picks stable vs suffixed; the
+    # suffix RNG is keyed only on the per-step seed so both halves are
+    # reproducible across processes.
+    rng = random.Random(f"{session_id}|{step_name}|{seed}")  # noqa: S311
+    out: dict[str, str] = {}
+    for name in field_names:
+        digest = hashlib.sha256(name.encode("utf-8")).digest()
+        if digest[0] % 2 == 0:
+            out[name] = name
+        else:
+            out[name] = f"{name}_{rng.randrange(16**4):04x}"
+    return out
 
 router = APIRouter(prefix="/quote", tags=["quote"])
 _logger = structlog.get_logger("kestrel.mock_site.routes.quote")
@@ -400,6 +453,16 @@ def _render_step(
     templates = request.app.state.templates
     csrf_service = request.app.state.csrf_service
     csrf_token = csrf_service.mint(request)
+    settings = request.app.state.settings
+    persona_spec = request.app.state.persona_spec
+    strategy = persona_spec.field_id_strategy_by_difficulty[settings.difficulty]
+    field_ids = _compute_field_ids(
+        strategy=strategy,
+        session_id=sid,
+        step_name=step,
+        seed=settings.seed,
+        field_names=STEP_FIELD_NAMES[step],
+    )
     persona_data = getattr(state, STEP_TO_ATTR[step], None)
     context = {
         "sid": sid,
@@ -407,6 +470,9 @@ def _render_step(
         "step_name": step,
         "errors": errors,
         "field_values": persona_data.model_dump() if persona_data is not None else {},
+        "field_ids": field_ids,
+        "difficulty": settings.difficulty.value,
+        "persona_css": persona_spec.css_filename,
     }
     response: HTMLResponse = templates.TemplateResponse(
         request,
@@ -466,6 +532,7 @@ def _render_quote_result(request: Request, sid: str, state: FormState) -> HTMLRe
                 {"name": addon.name, "label": addon.name.replace("_", " "), "price": addon.price}
                 for addon in premium.addons
             ],
+            "persona_css": persona_spec.css_filename,
         },
     )
     csrf_service.set_cookie(response, csrf_token)

@@ -16,7 +16,6 @@ import logging
 import random
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +24,7 @@ from fastapi.templating import Jinja2Templates
 
 from kestrel.mock_site.config import Difficulty, Persona, Settings
 from kestrel.mock_site.csrf import CsrfService
+from kestrel.mock_site.fixtures.personas import PersonaSpec, build_persona_spec
 from kestrel.mock_site.logging import configure_logging
 from kestrel.mock_site.middleware.challenge import ChallengeMiddleware
 from kestrel.mock_site.middleware.latency import LatencyMiddleware
@@ -35,37 +35,6 @@ from kestrel.mock_site.state import SessionStore, make_session_store, run_janito
 
 INTERMITTENT_PROB_LOW = 0.10
 INTERMITTENT_PROB_HIGH = 0.30
-
-
-_PERSONA_PREMIUM_OFFSETS: dict[Persona, int] = {
-    Persona.A: 0,
-    Persona.B: 175,
-    Persona.C: 350,
-}
-
-_PERSONA_ADDON_CATALOGS: dict[Persona, tuple[str, ...]] = {
-    Persona.A: ("breakdown", "legal_cover", "courtesy_car", "key_cover", "windscreen"),
-    Persona.B: ("breakdown", "legal_cover", "windscreen"),
-    Persona.C: ("breakdown", "courtesy_car", "key_cover"),
-}
-
-
-@dataclass(frozen=True, slots=True)
-class PersonaSpecStub:
-    """Phase A placeholder. Sections 09/10 replace with the full PersonaSpec.
-
-    Carries the subset of fields that the active route surface
-    (sections 06-08) reads. The full divergence-axis matrix lands when
-    persona_b and persona_c content arrives.
-    """
-
-    name: Persona
-    template_dir: str
-    premium_seed_offset: int
-    addon_catalog: tuple[str, ...]
-
-    def __repr__(self) -> str:
-        return f"<PersonaSpec name={self.name}>"
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -102,13 +71,8 @@ def create_app(settings: Settings) -> FastAPI:
     return app
 
 
-def _build_persona_spec(settings: Settings) -> PersonaSpecStub:
-    return PersonaSpecStub(
-        name=settings.persona,
-        template_dir=settings.persona.value,
-        premium_seed_offset=_PERSONA_PREMIUM_OFFSETS[settings.persona],
-        addon_catalog=_PERSONA_ADDON_CATALOGS[settings.persona],
-    )
+def _build_persona_spec(settings: Settings) -> PersonaSpec:
+    return build_persona_spec(settings.persona)
 
 
 def _build_csrf_service(settings: Settings) -> CsrfService:

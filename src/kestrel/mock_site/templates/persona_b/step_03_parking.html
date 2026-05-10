@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Where do you park?{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/parking"
+      class="legacy-form"
+      data-test-step="parking">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Where do you park?</h1>
+  <div class="field-row">
+    <label>Overnight location</label>
+    {% set fid = field_ids.get('parking_overnight', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="parking_overnight"
+            data-test-field-parking_overnight>
+      <option value=""></option>
+      <option value="garage">Garage</option>
+      <option value="driveway">Driveway</option>
+      <option value="street">Street</option>
+      <option value="car_park">Car park</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <label>Daytime location</label>
+    {% set fid = field_ids.get('parking_daytime', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="parking_daytime"
+            data-test-field-parking_daytime>
+      <option value=""></option>
+      <option value="garage">Garage</option>
+      <option value="driveway">Driveway</option>
+      <option value="street">Street</option>
+      <option value="work_car_park">Work car park</option>
+    </select>
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

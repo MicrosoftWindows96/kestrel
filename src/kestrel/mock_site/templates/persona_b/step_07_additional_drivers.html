@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Other drivers{% endblock %}
+{% block content %}
+<form method="post"
+      action="/quote/{{ sid|default('') }}/additional-drivers"
+      class="legacy-form"
+      data-test-step="additional-drivers">
+  <input type="hidden" name="_csrf" value="{{ csrf_token or '' }}">
+  {% if errors %}
+  <div class="banner banner-error" data-test-error-banner>
+    {% for name, msg in errors.items() %}
+      <span class="field-error" data-test-error-{{ name }}>{{ msg }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <h1>Other drivers on this policy</h1>
+  <div class="field-row">
+    <label>How many extra drivers?</label>
+    {% set fid = field_ids.get('additional_driver_count', '') %}
+    <select {% if fid %}id="{{ fid }}"{% endif %} name="additional_driver_count"
+            data-test-field-additional_driver_count>
+      <option value="0">0</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Next" data-test-submit>
+  </div>
+</form>
+{% endblock %}

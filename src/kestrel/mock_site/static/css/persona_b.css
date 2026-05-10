@@ -1,0 +1,71 @@
+/* persona_b styling: convey "legacy aggregator" look with low-density,
+   form-driven layout. Class names track the persona_b divergence axes
+   pinned in plan section 25 so tests can assert presence without
+   binding to copy text. */
+
+.legacy-form {
+  font-family: Georgia, "Times New Roman", serif;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: #fffdf6;
+  border: 1px solid #d9c79f;
+}
+
+.banner {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 2px;
+}
+
+.banner-error {
+  background: #fde8e8;
+  border-left: 4px solid #b00020;
+  color: #5b0a14;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.field-row label {
+  font-weight: 600;
+}
+
+.submit-row {
+  margin-top: 1.25rem;
+}
+
+.submit-row input[type="submit"] {
+  background: #1e3a5f;
+  color: #fffdf6;
+  border: 0;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.field-error {
+  display: inline-block;
+  color: #b00020;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+
+.premium-total-row {
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.challenge-shell {
+  font-family: Georgia, "Times New Roman", serif;
+  max-width: 480px;
+  margin: 3rem auto;
+  padding: 2rem;
+  text-align: center;
+  background: #fffdf6;
+  border: 1px solid #d9c79f;
+}
