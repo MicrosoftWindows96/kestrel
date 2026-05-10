@@ -36,9 +36,7 @@ async def get_vehicle(sid: str, request: Request) -> HTMLResponse:
 
     templates: Jinja2Templates = request.app.state.templates
     headers = (
-        {HX_RESWAP_HEADER: HX_RESWAP_VALUE}
-        if settings.difficulty is not Difficulty.EASY
-        else None
+        {HX_RESWAP_HEADER: HX_RESWAP_VALUE} if settings.difficulty is not Difficulty.EASY else None
     )
     return templates.TemplateResponse(
         request,
