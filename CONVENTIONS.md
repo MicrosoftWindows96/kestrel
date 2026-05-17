@@ -57,7 +57,7 @@ feat(fetcher): add Scrapling stealth session wrapper
 Wrap StealthyFetcher with project-default args (block_webrtc,
 hide_canvas, dns_over_https). Expose async session pool.
 
-Signed-off-by: MicrosoftWindows96 <spam@zagrosi.com>
+Signed-off-by: zagrosi-code <spam@zagrosi.com>
 ```
 
 Bad:
