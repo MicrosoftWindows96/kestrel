@@ -5,7 +5,7 @@ description = "Educational research project for personal-use UK car insurance qu
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "AGPL-3.0-or-later" }
-authors = [{ name = "MicrosoftWindows96", email = "spam@zagrosi.com" }]
+authors = [{ name = "zagrosi-code", email = "spam@zagrosi.com" }]
 keywords = ["research", "browser-automation", "uk-insurance", "educational"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -34,8 +34,8 @@ dependencies = [
 faker = ["Faker>=40,<41"]
 
 [project.urls]
-Homepage = "https://github.com/zagrosi/kestrel"
-Issues = "https://github.com/zagrosi/kestrel/issues"
+Homepage = "https://github.com/zagrosi-code/kestrel"
+Issues = "https://github.com/zagrosi-code/kestrel/issues"
 
 [project.scripts]
 mock-site = "kestrel.mock_site.cli:main"
